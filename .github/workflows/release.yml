@@ -3,8 +3,7 @@ name: Release Build
 on:
   push:
     tags:
-      - 'v*'
-      - '[0-9]+.*'
+      - '*'
   workflow_dispatch:
     inputs:
       tag_name:
@@ -129,7 +128,7 @@ jobs:
     name: Create GitHub Release
     needs: [build-desktop-linux, build-desktop-windows, build-mobile-android]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     steps:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
