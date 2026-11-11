@@ -245,6 +245,7 @@ dependencies = [
  "eframe",
  "egui",
  "image",
+ "log",
  "mdns-sd",
  "tokio",
  "tracing",
