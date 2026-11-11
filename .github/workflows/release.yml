@@ -73,16 +73,14 @@ jobs:
       - name: Package Artifact
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path dist/opencam-windows-x86_64
-          Copy-Item target/x86_64-pc-windows-msvc/release/app-desktop.exe dist/opencam-windows-x86_64/opencam-studio.exe
-          Copy-Item README.md dist/opencam-windows-x86_64/
-          Compress-Archive -Path dist/opencam-windows-x86_64/* -DestinationPath opencam-desktop-windows-x86_64.zip
+          New-Item -ItemType Directory -Path dist
+          Copy-Item target/x86_64-pc-windows-msvc/release/app-desktop.exe dist/opencam-studio-windows-x86_64.exe
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: opencam-desktop-windows-x86_64
-          path: opencam-desktop-windows-x86_64.zip
+          name: opencam-studio-windows-x86_64
+          path: dist/opencam-studio-windows-x86_64.exe
 
   build-mobile-android:
     name: Build Mobile (Android ARM64)
@@ -171,9 +169,10 @@ jobs:
 
             ### Fichiers de Release
             - Linux x86_64 : `opencam-desktop-linux-x86_64.tar.gz`
-            - Windows x86_64 : `opencam-desktop-windows-x86_64.zip`
+            - Windows x86_64 : `opencam-studio-windows-x86_64.exe` (Exécutable direct)
             - Android ARM64 : `opencam-mobile-android-arm64.zip`
             - Empreintes cryptographiques : `SHA256SUMS.txt`
           files: release-assets/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

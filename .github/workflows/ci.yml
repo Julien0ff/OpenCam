@@ -40,3 +40,4 @@ jobs:
 
       - name: Run Cargo Test
         run: cargo test --all --verbose
+
