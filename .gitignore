@@ -1,0 +1,8 @@
+/target
+**/*.rs.bk
+*.pdb
+*.apk
+*.aab
+*.so
+.DS_Store
+*.log

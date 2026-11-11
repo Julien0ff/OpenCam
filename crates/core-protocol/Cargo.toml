@@ -1,0 +1,20 @@
+[package]
+name = "core-protocol"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = { workspace = true }
+bytes = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, optional = true }
+tokio-util = { workspace = true, optional = true }
+tracing = { workspace = true }
+
+[features]
+default = ["async-framing"]
+async-framing = ["dep:tokio", "dep:tokio-util"]
