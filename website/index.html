@@ -1,301 +1,1477 @@
 <!DOCTYPE html>
-<html lang="fr" class="scroll-smooth">
+<html lang="fr">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenCam — Webcam Virtuelle & Régie Multi-Caméras 100% Rust</title>
-    <meta name="description" content="Suite open-source 100% Rust : transformez vos smartphones en caméras virtuelles haute fidélité. Latence < 20ms UDP, commutation Tally 1-clic, Center Stage et sortie /dev/videoX.">
-    <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OpenCam — vos téléphones deviennent une régie vidéo</title>
+    <meta name="description"
+        content="OpenCam transforme un ou plusieurs smartphones en webcams pour votre ordinateur. Passez de l’un à l’autre en un clic et utilisez le résultat dans Zoom, OBS, Discord ou Teams. Libre, 100 % Rust, sans compte ni cloud.">
+    <meta property="og:title" content="OpenCam — vos téléphones deviennent une régie vidéo">
+    <meta property="og:description"
+        content="Webcam virtuelle et régie multi-caméras open source, 100 % Rust. Windows et Linux.">
+    <meta name="theme-color" content="#f0f0ee" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#111113" media="(prefers-color-scheme: dark)">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2316171a'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%23e0282b'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&display=swap"
+        rel="stylesheet">
     <style>
+        /* ------------------------------------------------------------------
+           Tokens
+           Le rouge « tally » a un seul sens : à l’antenne. Il n’est utilisé
+           nulle part ailleurs (ni boutons, ni liens, ni tableau).
+           ------------------------------------------------------------------ */
         :root {
-            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-            --bg-base: #090a0d;
-            --bg-surface: #101217;
-            --border-subtle: rgba(255, 255, 255, 0.08);
-            --studio-orange: #ff6600;
+            color-scheme: light dark;
+
+            --paper: #f0f0ee;
+            /* fond de page */
+            --surface: #ffffff;
+            /* cartes */
+            --ink: #141416;
+            /* texte principal — 16.9:1 sur paper */
+            --ink-2: #55565c;
+            /* texte secondaire — 6.5:1 sur paper */
+            --ink-3: #66676d;
+            /* légendes — 5.0:1 sur paper */
+            --rule: #dcdcd8;
+            --rule-strong: #c4c4bf;
+
+            --tally: #e0282b;
+            /* PGM / ON AIR */
+            --tally-text: #c01d1f;
+            /* même signal, en texte — 5.1:1 sur paper */
+            --preview: #22a35a;
+            /* PVW */
+
+            --device: #16171a;
+            /* la régie reste un objet sombre */
+            --device-2: #1f2024;
+            --device-ink: #ecece9;
+            --device-mute: #9a9ba1;
+            /* 6.4:1 sur device */
+
+            --focus: #1d4ed8;
+
+            --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+            --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+
+            --radius: 14px;
+            --wrap: 1120px;
+            --gutter: clamp(20px, 5vw, 40px);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --paper: #111113;
+                --surface: #18181b;
+                --ink: #ececea;
+                --ink-2: #a3a3a8;
+                --ink-3: #8b8b91;
+                --rule: #2a2a2e;
+                --rule-strong: #3a3a3f;
+                --tally-text: #ff6b6b;
+                --device: #0b0b0d;
+                --device-2: #1a1b1f;
+                --focus: #8ab4ff;
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           Base
+           ------------------------------------------------------------------ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            scroll-behavior: smooth;
         }
 
         body {
-            font-family: var(--font-sans);
-            background-color: var(--bg-base);
-            color: #d1d5db;
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: var(--font-body);
+            font-size: 1.0625rem;
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .font-mono {
+        h1,
+        h2,
+        h3 {
+            font-family: var(--font-display);
+            font-stretch: 88%;
+            line-height: 1.05;
+            letter-spacing: -0.015em;
+            margin: 0;
+            text-wrap: balance;
+        }
+
+        p {
+            margin: 0;
+            text-wrap: pretty;
+        }
+
+        a {
+            color: inherit;
+            text-underline-offset: 0.2em;
+            text-decoration-thickness: 1px;
+        }
+
+        a:hover {
+            text-decoration-thickness: 2px;
+        }
+
+        code,
+        kbd,
+        .mono {
             font-family: var(--font-mono);
-            font-feature-settings: "tnum" 1, "zero" 1;
+            font-size: 0.875em;
+            font-variant-numeric: tabular-nums slashed-zero;
         }
 
-        .window-frame {
-            background: #111319;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
-        }
-
-        .code-block {
-            background: #0d0e12;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        :focus-visible {
+            outline: 2px solid var(--focus);
+            outline-offset: 3px;
             border-radius: 6px;
+        }
+
+        [id] {
+            scroll-margin-top: 88px;
+        }
+
+        button,
+        a {
+            touch-action: manipulation;
+        }
+
+        .wrap {
+            max-width: var(--wrap);
+            margin-inline: auto;
+            padding-inline: var(--gutter);
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .skip {
+            position: absolute;
+            left: 12px;
+            top: -60px;
+            z-index: 100;
+            background: var(--ink);
+            color: var(--paper);
+            padding: 10px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+
+        .skip:focus {
+            top: 12px;
+        }
+
+        /* Buttons ---------------------------------------------------------- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 48px;
+            padding: 0 22px;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            font: 600 1rem/1 var(--font-body);
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+        }
+
+        .btn svg {
+            width: 18px;
+            height: 18px;
+            flex: none;
+        }
+
+        .btn-primary {
+            background: var(--ink);
+            color: var(--paper);
+        }
+
+        .btn-primary:hover {
+            background: color-mix(in srgb, var(--ink) 82%, var(--paper));
+        }
+
+        .btn-quiet {
+            border-color: var(--rule-strong);
+            color: var(--ink);
+            background: transparent;
+        }
+
+        .btn-quiet:hover {
+            border-color: var(--ink);
+        }
+
+        .btn-sm {
+            min-height: 44px;
+            padding: 0 18px;
+            font-size: 0.9375rem;
+        }
+
+        /* ------------------------------------------------------------------
+           Header
+           ------------------------------------------------------------------ */
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: color-mix(in srgb, var(--paper) 88%, transparent);
+            backdrop-filter: saturate(1.4) blur(12px);
+            -webkit-backdrop-filter: saturate(1.4) blur(12px);
+            border-bottom: 1px solid var(--rule);
+        }
+
+        @media (prefers-reduced-transparency: reduce) {
+            .site-header {
+                background: var(--paper);
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
+        }
+
+        .site-header .wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            height: 64px;
+        }
+
+        .wordmark {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font: 700 1.1875rem/1 var(--font-display);
+            font-stretch: 92%;
+            letter-spacing: -0.01em;
+            text-decoration: none;
+        }
+
+        .wordmark-lamp {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--tally);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--tally) 22%, transparent);
+        }
+
+        .site-nav {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .site-nav a:not(.btn) {
+            display: inline-flex;
+            align-items: center;
+            min-height: 44px;
+            padding: 0 12px;
+            color: var(--ink-2);
+            text-decoration: none;
+            font-size: 0.9375rem;
+            border-radius: 8px;
+        }
+
+        .site-nav a:not(.btn):hover {
+            color: var(--ink);
+        }
+
+        .site-nav .btn {
+            margin-left: 8px;
+        }
+
+        @media (max-width: 760px) {
+            .site-nav a:not(.btn) {
+                display: none;
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           Hero
+           ------------------------------------------------------------------ */
+        .hero {
+            padding-block: clamp(48px, 8vw, 96px) clamp(56px, 8vw, 104px);
+        }
+
+        .hero .wrap {
+            display: grid;
+            grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+            gap: clamp(40px, 5vw, 72px);
+            align-items: center;
+        }
+
+        @media (max-width: 920px) {
+            .hero .wrap {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 1.5rem + 3.4vw, 4.25rem);
+            font-weight: 750;
+            font-stretch: 82%;
+            line-height: 0.98;
+            letter-spacing: -0.025em;
+        }
+
+        .hero-lede {
+            margin-top: 24px;
+            font-size: 1.1875rem;
+            color: var(--ink-2);
+            max-width: 34em;
+        }
+
+        .hero-actions {
+            margin-top: 32px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .hero-meta {
+            margin-top: 20px;
+            font-size: 0.875rem;
+            color: var(--ink-3);
+        }
+
+        .hero-meta span+span::before {
+            content: "·";
+            margin: 0 8px;
+        }
+
+        /* ------------------------------------------------------------------
+           La régie (élément signature)
+           ------------------------------------------------------------------ */
+        .rig {
+            margin: 0;
+            background: var(--device);
+            color: var(--device-ink);
+            border-radius: 18px;
+            padding: 12px;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.06),
+                0 1px 2px rgba(0, 0, 0, 0.12),
+                0 32px 64px -32px rgba(0, 0, 0, 0.45);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .rig {
+                box-shadow: inset 0 0 0 1px #26272b, 0 32px 64px -32px rgba(0, 0, 0, 0.8);
+            }
+        }
+
+        .rig-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 4px 6px 12px;
+            font-family: var(--font-display);
+            font-stretch: 75%;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .onair {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px 4px 8px;
+            border: 1px solid var(--tally);
+            border-radius: 6px;
+            color: #fff;
+        }
+
+        .lamp {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--tally);
+            box-shadow: 0 0 8px var(--tally);
+        }
+
+        .rig-title {
+            color: var(--device-mute);
+        }
+
+        .rig-tc {
+            margin-left: auto;
+            font-family: var(--font-mono);
+            font-size: 0.8125rem;
+            letter-spacing: 0;
+            font-variant-numeric: tabular-nums slashed-zero;
+            color: var(--device-mute);
+        }
+
+        .pgm {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 0 0 2px var(--tally);
+        }
+
+        .pgm svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .tag {
+            position: absolute;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 5px;
+            background: rgba(10, 10, 12, 0.72);
+            font-family: var(--font-display);
+            font-stretch: 75%;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: #fff;
+        }
+
+        .tag b {
+            font-weight: 800;
+            letter-spacing: 0.08em;
+        }
+
+        .pgm .tag-name {
+            left: 10px;
+            top: 10px;
+        }
+
+        .pgm .tag-name b {
+            color: #ff8a8a;
+        }
+
+        .pgm .tag-out {
+            right: 10px;
+            bottom: 10px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            letter-spacing: 0;
+            color: #d6d6d3;
+        }
+
+        .bus {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .cam {
+            appearance: none;
+            border: 0;
+            margin: 0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 6px 6px 8px;
+            min-height: 44px;
+            background: var(--device-2);
+            color: var(--device-ink);
+            border-radius: 10px;
+            box-shadow: inset 0 0 0 2px transparent;
+            text-align: left;
+            cursor: pointer;
+            font: inherit;
+            transition: box-shadow .12s ease, background-color .12s ease;
+        }
+
+        .cam:hover {
+            background: #26272c;
+        }
+
+        .cam:focus-visible {
+            outline-color: #8ab4ff;
+            outline-offset: 2px;
+            border-radius: 10px;
+        }
+
+        .cam-view {
+            position: relative;
+            display: block;
+            aspect-ratio: 16 / 9;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .cam-view svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .cam-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            font-size: 0.8125rem;
+            color: var(--device-mute);
+            padding-inline: 2px;
+        }
+
+        .cam-label span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .cam kbd {
+            flex: none;
+            display: inline-grid;
+            place-items: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            background: #2c2d33;
+            color: var(--device-ink);
+            font-size: 0.75rem;
+        }
+
+        .cam .tag {
+            left: 6px;
+            top: 6px;
+            font-size: 0.6875rem;
+            padding: 2px 6px;
+            visibility: hidden;
+        }
+
+        .cam[data-state="pgm"] {
+            box-shadow: inset 0 0 0 2px var(--tally);
+        }
+
+        .cam[data-state="pgm"] .tag {
+            visibility: visible;
+            background: var(--tally);
+        }
+
+        .cam[data-state="pgm"] .cam-label {
+            color: var(--device-ink);
+        }
+
+        .cam[data-state="pvw"] {
+            box-shadow: inset 0 0 0 2px var(--preview);
+        }
+
+        .cam[data-state="pvw"] .tag {
+            visibility: visible;
+            background: #157a41;
+        }
+
+        .rig-caption {
+            padding: 12px 6px 2px;
+            font-size: 0.8125rem;
+            color: var(--device-mute);
+        }
+
+        /* ------------------------------------------------------------------
+           Sections
+           ------------------------------------------------------------------ */
+        .section {
+            padding-block: clamp(64px, 9vw, 112px);
+            border-top: 1px solid var(--rule);
+        }
+
+        .section-head {
+            max-width: 40em;
+            margin-bottom: clamp(32px, 4vw, 48px);
+        }
+
+        .section-head h2 {
+            font-size: clamp(2rem, 1.4rem + 2vw, 2.875rem);
+            font-weight: 750;
+            font-stretch: 84%;
+        }
+
+        .section-head p {
+            margin-top: 14px;
+            color: var(--ink-2);
+            font-size: 1.125rem;
+        }
+
+        /* Étapes — une vraie séquence, donc numérotée */
+        .steps {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: clamp(24px, 3vw, 40px);
+            counter-reset: step;
+        }
+
+        @media (max-width: 820px) {
+            .steps {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        .steps li {
+            counter-increment: step;
+            padding-top: 20px;
+            border-top: 2px solid var(--ink);
+        }
+
+        .steps li::before {
+            content: counter(step);
+            display: block;
+            margin-bottom: 14px;
+            font: 800 2.75rem/1 var(--font-display);
+            font-stretch: 70%;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .steps h3 {
+            font-size: 1.375rem;
+            font-weight: 700;
+        }
+
+        .steps p {
+            margin-top: 10px;
+            color: var(--ink-2);
+        }
+
+        /* Fiche technique */
+        .spec {
+            background: var(--surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--rule);
+        }
+
+        .spec-row {
+            display: grid;
+            grid-template-columns: 200px minmax(0, 1fr) 240px;
+            gap: 12px 32px;
+            align-items: baseline;
+            padding: 28px clamp(20px, 3vw, 36px);
+        }
+
+        .spec-row+.spec-row {
+            border-top: 1px solid var(--rule);
+        }
+
+        .spec-figure {
+            font: 750 2rem/1 var(--font-display);
+            font-stretch: 72%;
+            letter-spacing: -0.01em;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .spec-body h3 {
+            font-size: 1.1875rem;
+            font-weight: 700;
+            font-stretch: 95%;
+            letter-spacing: 0;
+        }
+
+        .spec-body p {
+            margin-top: 8px;
+            color: var(--ink-2);
+            max-width: 38em;
+        }
+
+        .spec-src {
+            font-size: 0.8125rem;
+            color: var(--ink-3);
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 900px) {
+            .spec-row {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .spec-src {
+                text-align: left;
+            }
+        }
+
+        /* Comparatif */
+        .table-wrap {
+            background: var(--surface);
+            border: 1px solid var(--rule);
+            border-radius: var(--radius);
+            overflow-x: auto;
+            overscroll-behavior-x: contain;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9375rem;
+            min-width: 720px;
+        }
+
+        caption {
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 16px 20px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        thead th {
+            font: 700 0.9375rem/1.2 var(--font-display);
+            font-stretch: 88%;
+            border-bottom: 1px solid var(--rule-strong);
+            color: var(--ink-2);
+        }
+
+        tbody tr+tr th,
+        tbody tr+tr td {
+            border-top: 1px solid var(--rule);
+        }
+
+        tbody th {
+            font-weight: 600;
+            color: var(--ink);
+            width: 24%;
+        }
+
+        td {
+            color: var(--ink-2);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .col-us {
+            background: color-mix(in srgb, var(--ink) 4%, transparent);
+        }
+
+        thead .col-us {
+            color: var(--ink);
+        }
+
+        td.col-us {
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        .table-note {
+            margin-top: 14px;
+            font-size: 0.875rem;
+            color: var(--ink-3);
+        }
+
+        /* Téléchargements */
+        .dl {
+            background: var(--surface);
+            border: 1px solid var(--rule);
+            border-radius: var(--radius);
+        }
+
+        .dl-row {
+            display: grid;
+            grid-template-columns: 180px minmax(0, 1fr) auto;
+            gap: 12px 32px;
+            align-items: center;
+            padding: 24px clamp(20px, 3vw, 36px);
+        }
+
+        .dl-row+.dl-row {
+            border-top: 1px solid var(--rule);
+        }
+
+        .dl-row h3 {
+            font-size: 1.375rem;
+            font-weight: 700;
+        }
+
+        .dl-row h3 small {
+            display: block;
+            margin-top: 4px;
+            font: 500 0.8125rem/1.2 var(--font-body);
+            color: var(--ink-3);
+            letter-spacing: 0;
+        }
+
+        .dl-info p {
+            color: var(--ink-2);
+        }
+
+        .dl-info code {
+            color: var(--ink-3);
+            overflow-wrap: anywhere;
+        }
+
+        .dl-info p+p {
+            margin-top: 4px;
+        }
+
+        .dl-extra {
+            grid-column: 2 / -1;
+        }
+
+        @media (max-width: 760px) {
+            .dl-row {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .dl-extra {
+                grid-column: auto;
+            }
+
+            .dl-row .btn {
+                justify-self: start;
+            }
+        }
+
+        .term {
+            position: relative;
+            background: var(--device);
+            color: #d9d9d6;
+            border-radius: 10px;
+            padding: 16px 56px 16px 18px;
+            font-family: var(--font-mono);
+            font-size: 0.8125rem;
+            line-height: 1.7;
+            overflow-x: auto;
+        }
+
+        .term pre {
+            margin: 0;
+            font: inherit;
+            white-space: pre;
+        }
+
+        .term .c {
+            color: #8e8f95;
+        }
+
+        .term .p {
+            color: #8e8f95;
+            user-select: none;
+        }
+
+        .copy {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            border: 0;
+            background: transparent;
+            color: #a8a9ae;
+            cursor: pointer;
+        }
+
+        .copy:hover {
+            background: #26272c;
+            color: #fff;
+        }
+
+        .copy svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .copy:focus-visible {
+            outline-color: #8ab4ff;
+            outline-offset: -2px;
+        }
+
+        .checksums {
+            margin-top: 16px;
+            font-size: 0.875rem;
+            color: var(--ink-3);
+        }
+
+        /* Footer */
+        .site-footer {
+            border-top: 1px solid var(--rule);
+            padding-block: 32px 48px;
+            font-size: 0.875rem;
+            color: var(--ink-3);
+        }
+
+        .site-footer .wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 32px;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .site-footer nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 20px;
+        }
+
+        .site-footer a {
+            color: var(--ink-2);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            *,
+            *::before,
+            *::after {
+                transition: none !important;
+            }
         }
     </style>
 </head>
-<body class="antialiased text-slate-300">
 
-    <!-- Top Navigation Bar -->
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-[#090a0d]/90 backdrop-blur-md border-b border-white/10">
-        <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <a href="#" class="flex items-center gap-2.5">
-                    <div class="w-6 h-6 rounded bg-orange-600 flex items-center justify-center font-bold text-white text-xs">
-                        OC
-                    </div>
-                    <span class="font-mono font-bold text-sm tracking-wider text-white">OPENCAM</span>
-                </a>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-slate-400">26.0</span>
-            </div>
+<body>
+    <a class="skip" href="#contenu">Aller au contenu</a>
 
-            <div class="hidden md:flex items-center gap-6 text-xs font-mono text-slate-400">
-                <a href="#downloads" class="hover:text-white transition">Télécharger</a>
-                <a href="#architecture" class="hover:text-white transition">Architecture</a>
-                <a href="#benchmark" class="hover:text-white transition">Comparatif</a>
-                <a href="https://github.com/opencamlink/opencamlink" target="_blank" class="hover:text-white transition">GitHub</a>
-            </div>
+    <!-- Scènes des trois caméras : réutilisées en vignette et sur le moniteur Program -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+            <!-- CAM 1 — plan serré, cadrage automatique sur le visage -->
+            <symbol id="scene-1" viewBox="0 0 160 90">
+                <rect width="160" height="90" fill="#4a5568" />
+                <rect x="0" y="0" width="34" height="90" fill="#424b5c" />
+                <rect x="118" y="20" width="30" height="3" fill="#5b6679" />
+                <rect x="122" y="10" width="5" height="10" fill="#8a6f5a" />
+                <rect x="129" y="13" width="4" height="7" fill="#6f8a73" />
+                <path d="M28 90 C32 67 55 61 80 61 C105 61 128 67 132 90 Z" fill="#1f2a3a" />
+                <path d="M70 61 L80 72 L90 61 Z" fill="#e7e2d8" />
+                <rect x="72" y="49" width="16" height="13" fill="#b4917b" />
+                <ellipse cx="80" cy="37" rx="17" ry="21" fill="#c9a690" />
+                <path
+                    d="M62.5 38 C61 20 71 13 81 13 C92 13 100 21 97.5 38 C95 28 89 23.5 80 23.5 C71 23.5 65 28 62.5 38 Z"
+                    fill="#2b2320" />
+                <g fill="none" stroke="#ffffff" stroke-opacity=".7" stroke-width="1">
+                    <path d="M56 18 V12 H62" />
+                    <path d="M98 12 H104 V18" />
+                    <path d="M56 56 V62 H62" />
+                    <path d="M98 62 H104 V56" />
+                </g>
+            </symbol>
+            <!-- CAM 2 — plan large du bureau -->
+            <symbol id="scene-2" viewBox="0 0 160 90">
+                <rect width="160" height="90" fill="#3a4556" />
+                <rect x="104" y="10" width="42" height="38" fill="#9fb2c4" />
+                <rect x="124" y="10" width="2" height="38" fill="#3a4556" />
+                <rect x="104" y="28" width="42" height="2" fill="#3a4556" />
+                <rect x="0" y="66" width="160" height="24" fill="#262b33" />
+                <rect x="18" y="62" width="124" height="5" fill="#7a604c" />
+                <rect x="24" y="67" width="4" height="23" fill="#5e4a3b" />
+                <rect x="132" y="67" width="4" height="23" fill="#5e4a3b" />
+                <rect x="27" y="50" width="9" height="12" fill="#8a5a3c" />
+                <ellipse cx="28" cy="45" rx="4" ry="7" fill="#527d57" transform="rotate(-20 28 45)" />
+                <ellipse cx="35" cy="44" rx="4" ry="8" fill="#5f8c63" transform="rotate(18 35 44)" />
+                <path d="M52 63 C53 53 58 48.5 66 48.5 C74 48.5 79 53 80 63 Z" fill="#1f2a3a" />
+                <circle cx="66" cy="39" r="8" fill="#c9a690" />
+                <path d="M58 39 C57.5 31 62 28 66 28 C71 28 75 31 74 39 C72.5 34.5 70 33 66 33 C62 33 59.5 34.5 58 39 Z"
+                    fill="#2b2320" />
+                <rect x="86" y="49" width="18" height="12" rx="1" fill="#1c2027" />
+                <rect x="88" y="51" width="14" height="8" fill="#5b7895" />
+                <rect x="82" y="61" width="26" height="2" fill="#a4a7ad" />
+            </symbol>
+            <!-- CAM 3 — plongée sur le plan de travail -->
+            <symbol id="scene-3" viewBox="0 0 160 90">
+                <rect width="160" height="90" fill="#6b5545" />
+                <rect width="160" height="90" fill="url(#grain)" opacity=".25" />
+                <g transform="rotate(-6 72 46)">
+                    <rect x="44" y="20" width="56" height="42" rx="2" fill="#ece8df" />
+                    <rect x="71.5" y="20" width="1" height="42" fill="#cfc9bd" />
+                    <g fill="#bdb6a8">
+                        <rect x="49" y="28" width="18" height="1.4" />
+                        <rect x="49" y="33" width="16" height="1.4" />
+                        <rect x="49" y="38" width="19" height="1.4" />
+                        <rect x="77" y="28" width="17" height="1.4" />
+                        <rect x="77" y="33" width="12" height="1.4" />
+                    </g>
+                    <rect x="78" y="38" width="15" height="12" fill="none" stroke="#c01d1f" stroke-width="1" />
+                </g>
+                <rect x="96" y="58" width="30" height="2.4" rx="1.2" fill="#1f2a3a" transform="rotate(-28 96 58)" />
+                <circle cx="128" cy="24" r="11" fill="#e3ddd2" />
+                <circle cx="128" cy="24" r="7.5" fill="#3b2a20" />
+                <ellipse cx="62" cy="74" rx="11" ry="7" fill="#c9a690" />
+                <ellipse cx="94" cy="72" rx="10" ry="7" fill="#c9a690" />
+                <rect x="52" y="78" width="20" height="12" fill="#1f2a3a" />
+                <rect x="85" y="76" width="18" height="14" fill="#1f2a3a" />
+            </symbol>
+            <pattern id="grain" width="6" height="6" patternUnits="userSpaceOnUse">
+                <rect width="6" height="1" fill="#000" />
+            </pattern>
+        </defs>
+    </svg>
 
-            <div class="flex items-center gap-3">
-                <a href="https://github.com/opencamlink/opencamlink/releases/latest" target="_blank" class="px-3.5 py-1.5 text-xs font-mono font-semibold rounded bg-orange-600 text-white hover:bg-orange-500 transition flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    <span>Release 26.0</span>
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Header / Hero Section with Direct Downloads -->
-    <header id="downloads" class="pt-28 pb-16 px-4 max-w-5xl mx-auto space-y-6">
-        <div class="space-y-4">
-            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-white/5 border border-white/10 text-xs font-mono text-slate-300">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                <span>Version 26.0</span>
-                <span class="text-slate-600">|</span>
-                <span>GitHub Actions CI : Passing</span>
-                <span class="text-slate-600">|</span>
-                <span>100% Rust</span>
-                <span class="text-slate-600">|</span>
-                <span>Zero Cloud</span>
-            </div>
-
-            <h1 class="text-3xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
-                Webcam virtuelle & régie multi-caméras 100% Rust.
-            </h1>
-
-            <p class="text-base sm:text-lg text-slate-400 max-w-3xl leading-relaxed">
-                Transformez vos smartphones Android et iOS en caméras virtuelles haute fidélité. Commutation instantanée multi-appareils (Program / Preview), flux UDP zéro-buffer à latence &lt; 20ms, cadrage automatique Center Stage et injection directe dans le noyau Linux (<code class="text-emerald-400">v4l2loopback</code>) ou Windows Media Foundation.
-            </p>
-        </div>
-
-        <!-- Direct Release Downloads Grid -->
-        <div class="pt-2 space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <!-- Windows (.exe direct) -->
-                <a href="https://github.com/opencamlink/opencamlink/releases/latest/download/opencam-studio-windows-x86_64.exe" class="p-3.5 rounded bg-orange-600/90 hover:bg-orange-500 text-white transition border border-orange-500/40 shadow-lg shadow-orange-600/20 flex flex-col justify-between group">
-                    <div class="flex items-center justify-between">
-                        <span class="font-mono text-xs font-bold uppercase tracking-wider">Windows</span>
-                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/30 font-bold">.EXE DIRECT</span>
-                    </div>
-                    <div class="mt-3 flex items-center justify-between">
-                        <span class="font-mono text-xs font-semibold">Télécharger .exe</span>
-                        <svg class="w-4 h-4 transform group-hover:translate-y-0.5 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    </div>
-                </a>
-
-                <!-- Linux (.tar.gz) -->
-                <a href="https://github.com/opencamlink/opencamlink/releases/latest/download/opencam-desktop-linux-x86_64.tar.gz" class="p-3.5 rounded bg-[#161922] hover:bg-[#1f2330] text-slate-200 transition border border-white/10 flex flex-col justify-between group">
-                    <div class="flex items-center justify-between">
-                        <span class="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">Linux</span>
-                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-slate-400">.TAR.GZ</span>
-                    </div>
-                    <div class="mt-3 flex items-center justify-between">
-                        <span class="font-mono text-xs font-semibold text-white">Télécharger x86_64</span>
-                        <svg class="w-4 h-4 text-slate-400 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    </div>
-                </a>
-
-                <!-- Android (.apk) -->
-                <a href="https://github.com/opencamlink/opencamlink/releases/latest/download/opencam-mobile-android-arm64.apk" class="p-3.5 rounded bg-[#161922] hover:bg-[#1f2330] text-slate-200 transition border border-white/10 flex flex-col justify-between group">
-                    <div class="flex items-center justify-between">
-                        <span class="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">Android</span>
-                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-slate-400">ARM64 APK</span>
-                    </div>
-                    <div class="mt-3 flex items-center justify-between">
-                        <span class="font-mono text-xs font-semibold text-white">Télécharger .apk</span>
-                        <svg class="w-4 h-4 text-slate-400 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    </div>
-                </a>
-
-                <!-- iOS (.ipa) -->
-                <a href="https://github.com/opencamlink/opencamlink/releases" target="_blank" class="p-3.5 rounded bg-[#161922] hover:bg-[#1f2330] text-slate-200 transition border border-white/10 flex flex-col justify-between group">
-                    <div class="flex items-center justify-between">
-                        <span class="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">iOS</span>
-                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-slate-400">.IPA / Sideload</span>
-                    </div>
-                    <div class="mt-3 flex items-center justify-between">
-                        <span class="font-mono text-xs font-semibold text-white">Releases iOS</span>
-                        <svg class="w-4 h-4 text-slate-400 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                    </div>
-                </a>
-            </div>
-
-            <!-- Terminal One-Liner (Linux / Cargo) -->
-            <div class="code-block p-3 font-mono text-xs text-slate-300 space-y-1 overflow-x-auto">
-                <div class="text-slate-500"># Installation Linux via Cargo & chargement du pilote loopback</div>
-                <div><span class="text-orange-400">sudo</span> modprobe v4l2loopback video_nr=10 card_label=<span class="text-emerald-400">"OpenCam"</span> exclusive_caps=1</div>
-                <div>cargo install --git https://github.com/opencamlink/opencamlink.git app-desktop &amp;&amp; opencam-studio</div>
-            </div>
+    <header class="site-header">
+        <div class="wrap">
+            <a class="wordmark" href="#" aria-label="OpenCam, accueil">
+                <span class="wordmark-lamp" aria-hidden="true"></span>OpenCam
+            </a>
+            <nav class="site-nav" aria-label="Navigation principale">
+                <a href="#fonctionnement">Fonctionnement</a>
+                <a href="#technique">Technique</a>
+                <a href="#comparatif">Comparatif</a>
+                <a href="https://github.com/Julien0ff/OpenCam">Code source</a>
+                <a class="btn btn-primary btn-sm" href="#telecharger">Télécharger</a>
+            </nav>
         </div>
     </header>
 
-    <!-- Technical Architecture Specifications -->
-    <section id="architecture" class="py-16 px-4 max-w-5xl mx-auto border-t border-white/10">
-        <div class="space-y-3 mb-10">
-            <h2 class="text-xl font-bold text-white font-mono">SPÉCIFICATIONS TECHNIQUES DE L'ARCHITECTURE</h2>
-            <p class="text-xs text-slate-400">
-                Structure modulaire découplée en crates Rust indépendantes.
-            </p>
-        </div>
+    <main id="contenu">
+        <section class="hero" aria-labelledby="titre">
+            <div class="wrap">
+                <div>
+                    <h1 id="titre">Vos téléphones deviennent une régie vidéo.</h1>
+                    <p class="hero-lede">
+                        OpenCam transforme un ou plusieurs smartphones en webcams pour votre ordinateur.
+                        Passez de l’un à l’autre en un clic, comme dans un studio, et utilisez le résultat
+                        dans Zoom, OBS, Discord ou Teams.
+                    </p>
+                    <div class="hero-actions">
+                        <a class="btn btn-primary" id="cta" href="#telecharger">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14" />
+                            </svg>
+                            <span id="cta-label">Télécharger</span>
+                        </a>
+                        <a class="btn btn-quiet" href="#fonctionnement">Comment ça marche</a>
+                    </div>
+                    <p class="hero-meta">
+                        <span>Version 26.0</span><span>Libre et gratuit</span><span>Sans compte ni cloud</span>
+                    </p>
+                </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Box 1 -->
-            <div class="window-frame p-5 space-y-3">
-                <div class="font-mono text-xs font-bold text-orange-400">01 / PROTOCOLE VIDÉO UDP (DROP-ON-LATE)</div>
-                <h3 class="text-sm font-bold text-white font-mono">Zéro Accumulation de Latence</h3>
-                <p class="text-xs text-slate-400 leading-relaxed">
-                    Les flux TCP classiques (RTMP, RTSP sur TCP) provoquent des gels d'image puis une avance rapide dès qu'un paquet est réémis. Le réassembleur UDP OpenCam élimine immédiatement toute trame partielle dont la séquence est dépassée. Le flux reste calé en temps réel avec une latence inférieure à 20 millisecondes sur réseau local Wi-Fi 5GHz.
+                <figure class="rig" aria-labelledby="rig-caption">
+                    <div class="rig-bar" aria-hidden="true">
+                        <span class="onair"><span class="lamp"></span>On air</span>
+                        <span class="rig-title">OpenCam Studio</span>
+                        <span class="rig-tc" id="tc">00:12:43</span>
+                    </div>
+
+                    <div class="pgm">
+                        <svg viewBox="0 0 160 90" role="img" aria-labelledby="pgm-name">
+                            <use id="pgm-use" href="#scene-2" />
+                        </svg>
+                        <span class="tag tag-name"><b>PGM</b> <span id="pgm-name">Cam 2 · Plan large</span></span>
+                        <span class="tag tag-out" aria-hidden="true">→ /dev/video10</span>
+                    </div>
+
+                    <div class="bus" role="group" aria-label="Caméras disponibles">
+                        <button class="cam" type="button" data-cam="1" aria-pressed="false" aria-keyshortcuts="1">
+                            <span class="cam-view">
+                                <svg viewBox="0 0 160 90" aria-hidden="true">
+                                    <use href="#scene-1" />
+                                </svg>
+                                <span class="tag"></span>
+                            </span>
+                            <span class="cam-label"><kbd>1</kbd><span>Pixel 8 · Visage</span></span>
+                        </button>
+                        <button class="cam" type="button" data-cam="2" aria-pressed="true" aria-keyshortcuts="2"
+                            data-state="pgm">
+                            <span class="cam-view">
+                                <svg viewBox="0 0 160 90" aria-hidden="true">
+                                    <use href="#scene-2" />
+                                </svg>
+                                <span class="tag">PGM</span>
+                            </span>
+                            <span class="cam-label"><kbd>2</kbd><span>iPhone 13 · Large</span></span>
+                        </button>
+                        <button class="cam" type="button" data-cam="3" aria-pressed="false" aria-keyshortcuts="3">
+                            <span class="cam-view">
+                                <svg viewBox="0 0 160 90" aria-hidden="true">
+                                    <use href="#scene-3" />
+                                </svg>
+                                <span class="tag"></span>
+                            </span>
+                            <span class="cam-label"><kbd>3</kbd><span>Galaxy S21 · Plongée</span></span>
+                        </button>
+                    </div>
+
+                    <figcaption class="rig-caption" id="rig-caption">
+                        Démonstration&nbsp;: cliquez une caméra, ou tapez 1, 2 ou 3, pour la mettre à l’antenne.
+                        En rouge ce qui est diffusé, en vert la caméra précédente, prête à revenir.
+                    </figcaption>
+                    <p class="sr-only" aria-live="polite" id="rig-status"></p>
+                </figure>
+            </div>
+        </section>
+
+        <section class="section" id="fonctionnement" aria-labelledby="fonctionnement-titre">
+            <div class="wrap">
+                <div class="section-head">
+                    <h2 id="fonctionnement-titre">Trois étapes, aucun compte.</h2>
+                    <p>Tout se passe sur votre réseau local. Rien ne transite par un serveur tiers.</p>
+                </div>
+                <ol class="steps">
+                    <li>
+                        <h3>Installez la régie</h3>
+                        <p>OpenCam Studio tourne sous Windows et Linux. C’est là que vous voyez toutes vos caméras et
+                            choisissez celle qui part à l’antenne.</p>
+                    </li>
+                    <li>
+                        <h3>Ouvrez OpenCam sur vos téléphones</h3>
+                        <p>Sur le même Wi-Fi, ils apparaissent tout seuls dans la régie grâce à la découverte réseau
+                            (mDNS). Rien à saisir.</p>
+                    </li>
+                    <li>
+                        <h3>Choisissez «&nbsp;OpenCam&nbsp;» comme caméra</h3>
+                        <p>Dans Zoom, Meet, OBS ou Discord, OpenCam se présente comme une webcam ordinaire. Vos
+                            interlocuteurs voient ce que vous mettez à l’antenne.</p>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <section class="section" id="technique" aria-labelledby="technique-titre">
+            <div class="wrap">
+                <div class="section-head">
+                    <h2 id="technique-titre">Pensé pour le direct.</h2>
+                    <p>Chaque choix technique sert la même idée&nbsp;: l’image doit rester à l’heure.</p>
+                </div>
+                <div class="spec">
+                    <div class="spec-row">
+                        <div class="spec-figure">&lt;&nbsp;20&nbsp;ms</div>
+                        <div class="spec-body">
+                            <h3>Une image en retard est jetée, pas attendue</h3>
+                            <p>La vidéo voyage en UDP. Quand une image arrive trop tard, elle est abandonnée au lieu de
+                                bloquer les suivantes&nbsp;: pas de gel suivi d’une accélération, comme avec les flux
+                                TCP (RTMP, RTSP). Mesuré en Wi-Fi 5&nbsp;GHz.</p>
+                        </div>
+                        <code class="spec-src">core-protocol/src/packet.rs</code>
+                    </div>
+                    <div class="spec-row">
+                        <div class="spec-figure">Auto</div>
+                        <div class="spec-body">
+                            <h3>Cadrage qui vous suit</h3>
+                            <p>La régie repère votre visage et recadre en douceur. Si vous reculez, elle zoome pour
+                                garder le même plan&nbsp;: visage, buste ou plan large. L’amorti du mouvement se règle.
+                            </p>
+                        </div>
+                        <code class="spec-src">camera-capture/src/face_tracking.rs</code>
+                    </div>
+                    <div class="spec-row">
+                        <div class="spec-figure">1–10×</div>
+                        <div class="spec-body">
+                            <h3>Le téléphone se pilote depuis l’ordinateur</h3>
+                            <p>Objectif avant, arrière ou ultra grand-angle, zoom, miroir, rotation et torche&nbsp;:
+                                tout se règle depuis la régie, sans toucher au téléphone posé sur son trépied.</p>
+                        </div>
+                        <code class="spec-src">core-protocol (canal RPC)</code>
+                    </div>
+                    <div class="spec-row">
+                        <div class="spec-figure mono" style="font-size:1.25rem">/dev/video10</div>
+                        <div class="spec-body">
+                            <h3>Une vraie webcam pour le système</h3>
+                            <p>Sous Linux, l’image est convertie en YUYV 4:2:2 et écrite directement dans un
+                                périphérique <code>v4l2loopback</code>. Sous Windows, elle passe par la caméra virtuelle
+                                de Media Foundation.</p>
+                        </div>
+                        <code class="spec-src">vcam-sink/src/linux.rs</code>
+                    </div>
+                    <div class="spec-row">
+                        <div class="spec-figure">100&nbsp;% Rust</div>
+                        <div class="spec-body">
+                            <h3>Natif de bout en bout</h3>
+                            <p>Ni Flutter, ni React Native, ni Electron. Android utilise Camera2 et l’encodeur matériel
+                                via le NDK, iOS AVFoundation. Le téléphone chauffe moins et tient plus longtemps.</p>
+                        </div>
+                        <code class="spec-src">camera-capture/src/android.rs</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="comparatif" aria-labelledby="comparatif-titre">
+            <div class="wrap">
+                <div class="section-head">
+                    <h2 id="comparatif-titre">Face aux alternatives.</h2>
+                    <p>iVCam, Camo et DroidCam font bien une chose&nbsp;: une caméra. OpenCam en gère plusieurs.</p>
+                </div>
+                <div class="table-wrap" role="region" aria-labelledby="comparatif-titre" tabindex="0">
+                    <table>
+                        <caption class="sr-only">Comparaison d’OpenCam avec iVCam, Camo Studio et DroidCam</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col"><span class="sr-only">Critère</span></th>
+                                <th scope="col" class="col-us">OpenCam</th>
+                                <th scope="col">iVCam</th>
+                                <th scope="col">Camo Studio</th>
+                                <th scope="col">DroidCam</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">Plusieurs caméras, commutation</th>
+                                <td class="col-us">Oui, en un clic</td>
+                                <td>Non</td>
+                                <td>Basique</td>
+                                <td>Non</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Cadrage automatique</th>
+                                <td class="col-us">Inclus</td>
+                                <td>Non</td>
+                                <td>Version payante</td>
+                                <td>Non</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Zoom selon la distance</th>
+                                <td class="col-us">Oui, en temps réel</td>
+                                <td>Non</td>
+                                <td>Limité</td>
+                                <td>Non</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Transport vidéo</th>
+                                <td class="col-us">UDP, images en retard jetées</td>
+                                <td>TCP</td>
+                                <td>Propriétaire (USB, Wi-Fi)</td>
+                                <td>HTTP / TCP</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Latence en Wi-Fi 5&nbsp;GHz</th>
+                                <td class="col-us">&lt;&nbsp;20&nbsp;ms</td>
+                                <td>60–150&nbsp;ms</td>
+                                <td>40–80&nbsp;ms</td>
+                                <td>80–120&nbsp;ms</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Mémoire utilisée</th>
+                                <td class="col-us">~30&nbsp;Mo</td>
+                                <td>~80&nbsp;Mo</td>
+                                <td>~250&nbsp;Mo</td>
+                                <td>~60&nbsp;Mo</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Modèle</th>
+                                <td class="col-us">Libre (MIT ou Apache&nbsp;2.0)</td>
+                                <td>Propriétaire, filigrane</td>
+                                <td>Abonnement</td>
+                                <td>Propriétaire, publicités</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="table-note">Version gratuite de chaque logiciel. Latence et mémoire&nbsp;: ordres de grandeur
+                    sur réseau local.</p>
+            </div>
+        </section>
+
+        <section class="section" id="telecharger" aria-labelledby="telecharger-titre">
+            <div class="wrap">
+                <div class="section-head">
+                    <h2 id="telecharger-titre">Télécharger OpenCam&nbsp;26.0</h2>
+                    <p>La régie s’installe sur l’ordinateur, le transmetteur sur chaque téléphone.</p>
+                </div>
+
+                <div class="dl">
+                    <div class="dl-row">
+                        <h3>Windows <small>Régie · x86_64</small></h3>
+                        <div class="dl-info">
+                            <p>Exécutable autonome, rien à installer.</p>
+                            <p><code>opencam-studio-windows-x86_64.exe</code></p>
+                        </div>
+                        <a class="btn btn-primary btn-sm"
+                            href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-studio-windows-x86_64.exe">Télécharger</a>
+                    </div>
+
+                    <div class="dl-row">
+                        <h3>Linux <small>Régie · x86_64</small></h3>
+                        <div class="dl-info">
+                            <p>Nécessite le module noyau <code>v4l2loopback</code>.</p>
+                            <p><code>opencam-desktop-linux-x86_64.tar.gz</code></p>
+                        </div>
+                        <a class="btn btn-primary btn-sm"
+                            href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-desktop-linux-x86_64.tar.gz">Télécharger</a>
+                        <div class="dl-extra">
+                            <div class="term">
+                                <pre id="cmd-linux"><span class="c"># Créer la caméra virtuelle /dev/video10</span>
+<span class="p">$ </span>sudo modprobe v4l2loopback video_nr=10 card_label="OpenCam" exclusive_caps=1
+
+<span class="c"># Ou compiler depuis les sources</span>
+<span class="p">$ </span>cargo install --git https://github.com/Julien0ff/OpenCam.git app-desktop</pre>
+                                <button class="copy" type="button" data-copy="cmd-linux"
+                                    aria-label="Copier les commandes">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <rect x="9" y="9" width="11" height="11" rx="2" />
+                                        <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dl-row">
+                        <h3>Android <small>Transmetteur · ARM64</small></h3>
+                        <div class="dl-info">
+                            <p>Bibliothèques natives à intégrer, l’APK installable arrive bientôt.</p>
+                            <p><code>opencam-mobile-android-arm64.zip</code></p>
+                        </div>
+                        <a class="btn btn-quiet btn-sm"
+                            href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-mobile-android-arm64.zip">Télécharger
+                            l’archive</a>
+                    </div>
+
+                    <div class="dl-row">
+                        <h3>iOS <small>Transmetteur</small></h3>
+                        <div class="dl-info">
+                            <p>Pas encore de version prête à installer. Compilation depuis les sources avec
+                                <code>cargo-apple</code>.</p>
+                        </div>
+                        <a class="btn btn-quiet btn-sm" href="https://github.com/Julien0ff/OpenCam#readme">Lire le
+                            guide</a>
+                    </div>
+                </div>
+
+                <p class="checksums">
+                    Empreintes SHA-256 dans <a
+                        href="https://github.com/Julien0ff/OpenCam/releases/latest/download/SHA256SUMS.txt"><code>SHA256SUMS.txt</code></a>.
+                    Toutes les versions sur <a href="https://github.com/Julien0ff/OpenCam/releases">GitHub</a>.
                 </p>
-                <div class="text-[11px] font-mono text-slate-500">crate : <code class="text-slate-300">crates/core-protocol/src/packet.rs</code></div>
             </div>
+        </section>
+    </main>
 
-            <!-- Box 2 -->
-            <div class="window-frame p-5 space-y-3">
-                <div class="font-mono text-xs font-bold text-orange-400">02 / CADRAGE CENTER STAGE & DISTANCE AUTO-ZOOM</div>
-                <h3 class="text-sm font-bold text-white font-mono">Filtre Exponentiel du 2nd Degré</h3>
-                <p class="text-xs text-slate-400 leading-relaxed">
-                    Le module de suivi analyse la position normalisée de la boîte englobante du visage et sa hauteur relative. L'auto-zoom compense automatiquement le recul de l'intervenant pour maintenir un plan stable (visage, buste ou plan large) avec un amorti de mouvement réglable sans à-coups.
-                </p>
-                <div class="text-[11px] font-mono text-slate-500">crate : <code class="text-slate-300">crates/camera-capture/src/face_tracking.rs</code></div>
-            </div>
-
-            <!-- Box 3 -->
-            <div class="window-frame p-5 space-y-3">
-                <div class="font-mono text-xs font-bold text-orange-400">03 / SORTIE SYSTÈME LINUX & WINDOWS</div>
-                <h3 class="text-sm font-bold text-white font-mono">Direct Kernel Loopback & MF Driver</h3>
-                <p class="text-xs text-slate-400 leading-relaxed">
-                    Sous Linux, les trames décodées sont converties en YUYV 4:2:2 via instructions SIMD rapides et écrites directement dans le descripteur ioctl de <code class="text-emerald-400">/dev/videoX</code>. Sous Windows, l'injection s'effectue via l'interface Virtual Camera de Media Foundation.
-                </p>
-                <div class="text-[11px] font-mono text-slate-500">crate : <code class="text-slate-300">crates/vcam-sink/src/linux.rs</code></div>
-            </div>
-
-            <!-- Box 4 -->
-            <div class="window-frame p-5 space-y-3">
-                <div class="font-mono text-xs font-bold text-orange-400">04 / CAPTURE MOBILE NATIVE SANS SURCOUCHE</div>
-                <h3 class="text-sm font-bold text-white font-mono">Android Camera2 NDK & iOS AVFoundation</h3>
-                <p class="text-xs text-slate-400 leading-relaxed">
-                    Aucun framework hybride lourd (Flutter, React Native ou Electron). Le code mobile compile directement en binaire natif via <code class="text-orange-400">cargo-ndk</code> (Android) et <code class="text-orange-400">cargo-apple</code> (iOS) avec encodage matériel direct pour minimiser l'échauffement de la batterie.
-                </p>
-                <div class="text-[11px] font-mono text-slate-500">crate : <code class="text-slate-300">crates/camera-capture/src/android.rs</code></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Technical Comparison Benchmark -->
-    <section id="benchmark" class="py-16 px-4 max-w-5xl mx-auto border-t border-white/10">
-        <div class="space-y-3 mb-8">
-            <h2 class="text-xl font-bold text-white font-mono">COMPARATIF TECHNIQUE OBJECTIF</h2>
-            <p class="text-xs text-slate-400">
-                Caractéristiques d'architecture face aux solutions propriétaires existantes.
-            </p>
-        </div>
-
-        <div class="window-frame overflow-x-auto">
-            <table class="w-full text-left text-xs font-mono border-collapse">
-                <thead>
-                    <tr class="border-b border-white/10 text-slate-400 uppercase bg-[#14161f]">
-                        <th class="py-3 px-4">Spécification</th>
-                        <th class="py-3 px-4 text-orange-400 font-bold">OpenCam Studio</th>
-                        <th class="py-3 px-4">iVCam</th>
-                        <th class="py-3 px-4">Camo Studio</th>
-                        <th class="py-3 px-4">DroidCam</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-white/5 text-slate-300">
-                    <tr>
-                        <td class="py-3 px-4 text-white font-semibold">Protocole réseau vidéo</td>
-                        <td class="py-3 px-4 text-emerald-400 font-bold">UDP (Drop-on-late)</td>
-                        <td class="py-3 px-4 text-slate-400">TCP (Accumulation de buffer)</td>
-                        <td class="py-3 px-4 text-slate-400">Propriétaire USB/Wi-Fi</td>
-                        <td class="py-3 px-4 text-slate-400">HTTP / TCP</td>
-                    </tr>
-                    <tr>
-                        <td class="py-3 px-4 text-white font-semibold">Latence moyenne (Wi-Fi 5GHz)</td>
-                        <td class="py-3 px-4 text-emerald-400 font-bold">&lt; 20 ms</td>
-                        <td class="py-3 px-4 text-slate-400">60 - 150 ms</td>
-                        <td class="py-3 px-4 text-slate-400">40 - 80 ms</td>
-                        <td class="py-3 px-4 text-slate-400">80 - 120 ms</td>
-                    </tr>
-                    <tr>
-                        <td class="py-3 px-4 text-white font-semibold">Commutation Régie Multi-Cam</td>
-                        <td class="py-3 px-4 text-emerald-400 font-bold">Oui (Bus Tally 1-clic)</td>
-                        <td class="py-3 px-4 text-red-400">Non</td>
-                        <td class="py-3 px-4 text-slate-400">Basique</td>
-                        <td class="py-3 px-4 text-red-400">Non</td>
-                    </tr>
-                    <tr>
-                        <td class="py-3 px-4 text-white font-semibold">Suivi de tête Center Stage</td>
-                        <td class="py-3 px-4 text-emerald-400 font-bold">Inclus (Filtre dynamique)</td>
-                        <td class="py-3 px-4 text-red-400">Non</td>
-                        <td class="py-3 px-4 text-slate-400">Spotlight (version payante)</td>
-                        <td class="py-3 px-4 text-red-400">Non</td>
-                    </tr>
-                    <tr>
-                        <td class="py-3 px-4 text-white font-semibold">Auto-zoom par distance</td>
-                        <td class="py-3 px-4 text-emerald-400 font-bold">Oui (Temps réel)</td>
-                        <td class="py-3 px-4 text-red-400">Non</td>
-                        <td class="py-3 px-4 text-slate-400">Limité</td>
-                        <td class="py-3 px-4 text-red-400">Non</td>
-                    </tr>
-                    <tr>
-                        <td class="py-3 px-4 text-white font-semibold">Codebase & Empreinte RAM</td>
-                        <td class="py-3 px-4 text-emerald-400 font-bold">100% Rust (~30 Mo)</td>
-                        <td class="py-3 px-4 text-slate-400">C++ Propriétaire (~80 Mo)</td>
-                        <td class="py-3 px-4 text-slate-400">Swift / C# (~250 Mo)</td>
-                        <td class="py-3 px-4 text-slate-400">C / Java (~60 Mo)</td>
-                    </tr>
-                    <tr>
-                        <td class="py-3 px-4 text-white font-semibold">Licence & Confidentialité</td>
-                        <td class="py-3 px-4 text-emerald-400 font-bold">Open-Source (MIT / Apache)</td>
-                        <td class="py-3 px-4 text-red-400">Propriétaire (Filigrane)</td>
-                        <td class="py-3 px-4 text-slate-400">Freemium (Abonnement)</td>
-                        <td class="py-3 px-4 text-slate-400">Propriétaire (Publicités)</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="py-10 px-4 border-t border-white/10 text-center font-mono text-xs text-slate-500">
-        <div class="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-4">
-            <div>OpenCam — Suite Webcam Virtuelle 100% Rust Multiplateforme.</div>
-            <div class="flex items-center gap-4 text-slate-400">
-                <a href="https://github.com/opencamlink/opencamlink" class="hover:text-white transition">GitHub Repo</a>
-                <a href="https://github.com/opencamlink/opencamlink/actions" class="hover:text-white transition">GitHub Actions</a>
-                <a href="https://github.com/opencamlink/opencamlink/releases" class="hover:text-white transition">Releases</a>
-            </div>
+    <footer class="site-footer">
+        <div class="wrap">
+            <p>OpenCam est un logiciel libre, sous licence MIT ou Apache&nbsp;2.0.</p>
+            <nav aria-label="Liens du projet">
+                <a href="https://github.com/Julien0ff/OpenCam">Code source</a>
+                <a href="https://github.com/Julien0ff/OpenCam/releases">Versions</a>
+                <a href="https://github.com/Julien0ff/OpenCam/actions">Intégration continue</a>
+            </nav>
         </div>
     </footer>
+
+    <script>
+        (() => {
+            const REPO = "https://github.com/Julien0ff/OpenCam";
+
+            /* Bouton principal adapté au système ---------------------------------- */
+            const ua = navigator.userAgent;
+            const cta = document.getElementById("cta");
+            const ctaLabel = document.getElementById("cta-label");
+            if (/Windows/i.test(ua)) {
+                cta.href = `${REPO}/releases/latest/download/opencam-studio-windows-x86_64.exe`;
+                ctaLabel.textContent = "Télécharger pour Windows";
+            } else if (/Linux/i.test(ua) && !/Android/i.test(ua)) {
+                cta.href = `${REPO}/releases/latest/download/opencam-desktop-linux-x86_64.tar.gz`;
+                ctaLabel.textContent = "Télécharger pour Linux";
+            }
+
+            /* Démonstration de la régie ------------------------------------------- */
+            const CAMS = {
+                1: "Cam 1 · Visage",
+                2: "Cam 2 · Plan large",
+                3: "Cam 3 · Plongée",
+            };
+            const buttons = [...document.querySelectorAll(".cam")];
+            const pgmUse = document.getElementById("pgm-use");
+            const pgmName = document.getElementById("pgm-name");
+            const status = document.getElementById("rig-status");
+            let pgm = 2;
+            let pvw = 1;
+
+            function render() {
+                for (const b of buttons) {
+                    const n = Number(b.dataset.cam);
+                    const state = n === pgm ? "pgm" : n === pvw ? "pvw" : "";
+                    b.dataset.state = state;
+                    b.setAttribute("aria-pressed", String(n === pgm));
+                    b.querySelector(".tag").textContent = state.toUpperCase();
+                }
+                pgmUse.setAttribute("href", `#scene-${pgm}`);
+                pgmName.textContent = CAMS[pgm];
+            }
+
+            function cut(n) {
+                if (n === pgm || !CAMS[n]) return;
+                pvw = pgm;
+                pgm = n;
+                render();
+                status.textContent = `${CAMS[n]} à l’antenne`;
+            }
+
+            buttons.forEach((b) => b.addEventListener("click", () => cut(Number(b.dataset.cam))));
+            document.addEventListener("keydown", (e) => {
+                if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+                if (e.target.closest("input, textarea, select, [contenteditable]")) return;
+                if (e.key === "1" || e.key === "2" || e.key === "3") cut(Number(e.key));
+            });
+            render();
+
+            /* Timecode -------------------------------------------------------------- */
+            const tc = document.getElementById("tc");
+            const start = Date.now() - (12 * 60 + 43) * 1000;
+            const pad = (v) => String(v).padStart(2, "0");
+            setInterval(() => {
+                const s = Math.floor((Date.now() - start) / 1000);
+                tc.textContent = `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
+            }, 1000);
+
+            /* Copier les commandes -------------------------------------------------- */
+            document.querySelectorAll("[data-copy]").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const src = document.getElementById(btn.dataset.copy);
+                    const text = [...src.childNodes]
+                        .filter((node) => !(node.classList && node.classList.contains("p")))
+                        .map((node) => node.textContent)
+                        .join("")
+                        .split("\n")
+                        .filter((line) => line.trim() && !line.trim().startsWith("#"))
+                        .join("\n");
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        btn.setAttribute("aria-label", "Commandes copiées");
+                        status.textContent = "Commandes copiées";
+                        setTimeout(() => btn.setAttribute("aria-label", "Copier les commandes"), 2000);
+                    } catch {
+                        status.textContent = "Copie impossible, sélectionnez le texte manuellement.";
+                    }
+                });
+            });
+        })();
+    </script>
 </body>
+
 </html>
