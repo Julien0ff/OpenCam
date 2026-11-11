@@ -4,12 +4,13 @@ on:
   push:
     tags:
       - 'v*'
+      - '[0-9]+.*'
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release Tag Name (e.g. v0.1.0)'
+        description: 'Release Tag Name (e.g. 26.0)'
         required: false
-        default: 'v0.1.0-alpha'
+        default: '26.0'
 
 permissions:
   contents: write

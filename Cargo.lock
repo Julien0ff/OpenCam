@@ -219,7 +219,7 @@ checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
 name = "app-desktop"
-version = "0.1.0"
+version = "26.0.0"
 dependencies = [
  "anyhow",
  "camera-capture",
@@ -236,7 +236,7 @@ dependencies = [
 
 [[package]]
 name = "app-mobile"
-version = "0.1.0"
+version = "26.0.0"
 dependencies = [
  "android_logger",
  "anyhow",
@@ -637,7 +637,7 @@ dependencies = [
 
 [[package]]
 name = "camera-capture"
-version = "0.1.0"
+version = "26.0.0"
 dependencies = [
  "core-protocol",
  "image",
@@ -771,7 +771,7 @@ dependencies = [
 
 [[package]]
 name = "core-protocol"
-version = "0.1.0"
+version = "26.0.0"
 dependencies = [
  "bincode",
  "bytes",
@@ -3706,7 +3706,7 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 
 [[package]]
 name = "vcam-sink"
-version = "0.1.0"
+version = "26.0.0"
 dependencies = [
  "core-protocol",
  "libc",
