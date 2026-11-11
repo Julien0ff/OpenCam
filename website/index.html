@@ -3,33 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenCam — Régie Broadcast & Webcam Virtuelle 100% Rust</title>
-    <meta name="description" content="Régie broadcast multi-caméras professionnelle et webcam virtuelle 100% Rust. Transformez vos smartphones en caméras studio 4K à latence < 30ms avec commutation Tally en 1 clic et Center Stage IA.">
+    <title>OpenCam — Webcam Virtuelle & Régie Multi-Caméras 100% Rust</title>
+    <meta name="description" content="Suite logicielle open-source 100% Rust : transformez vos smartphones en caméras virtuelles haute fidélité. Latence < 20ms UDP, commutation Tally 1-clic, Center Stage et sortie /dev/videoX.">
     <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
-            --bg-base: #0c0d10;
-            --bg-surface: #13151c;
-            --bg-elevated: #191c26;
+            --bg-base: #090a0d;
+            --bg-surface: #101217;
+            --bg-elevated: #161922;
             --border-subtle: rgba(255, 255, 255, 0.08);
-            --border-strong: rgba(255, 255, 255, 0.16);
+            --border-active: #ff6600;
             --studio-orange: #ff6600;
-            --studio-amber: #f59e0b;
             --tally-red: #ef4444;
             --tally-green: #22c55e;
-            --tally-dim: #374151;
         }
 
         body {
             font-family: var(--font-sans);
             background-color: var(--bg-base);
-            color: #e2e8f0;
-            selection-background-color: var(--studio-orange);
+            color: #d1d5db;
         }
 
         .font-mono {
@@ -37,567 +34,599 @@
             font-feature-settings: "tnum" 1, "zero" 1;
         }
 
-        .glass-nav {
-            background: rgba(12, 13, 16, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-subtle);
+        .window-frame {
+            background: #111319;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
         }
 
-        .studio-card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: 0.75rem;
-            transition: border-color 0.2s ease, transform 0.2s ease;
+        .studio-tab {
+            transition: all 0.15s ease;
         }
 
-        .studio-card:hover {
-            border-color: rgba(255, 102, 0, 0.4);
+        .studio-tab.active {
+            background: #1e222e;
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.2);
         }
 
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border-subtle);
-            color: #94a3b8;
+        .code-block {
+            background: #0d0e12;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
         }
 
-        .badge-tally-red {
-            background: rgba(239, 68, 68, 0.12);
-            border-color: rgba(239, 68, 68, 0.35);
-            color: #fca5a5;
-        }
-
-        .badge-tally-green {
-            background: rgba(34, 197, 94, 0.12);
-            border-color: rgba(34, 197, 94, 0.35);
-            color: #86efac;
-        }
-
-        .badge-orange {
-            background: rgba(255, 102, 0, 0.12);
-            border-color: rgba(255, 102, 0, 0.35);
-            color: #fdba74;
-        }
-
-        .interactive-viewport {
+        /* Toggle switch */
+        .toggle-switch {
             position: relative;
-            background: #000000;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            border: 1.5px solid var(--border-subtle);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.04);
-        }
-
-        /* Broadcast Studio Toggle */
-        .studio-toggle {
-            position: relative;
-            width: 2.75rem;
-            height: 1.5rem;
+            width: 2.25rem;
+            height: 1.25rem;
             border-radius: 9999px;
-            background: #252834;
+            background: #272a38;
             cursor: pointer;
             transition: background 0.2s ease;
         }
 
-        .studio-toggle.active {
+        .toggle-switch.active {
             background: var(--studio-orange);
         }
 
-        .studio-toggle::after {
+        .toggle-switch::after {
             content: '';
             position: absolute;
             top: 2px;
             left: 2px;
-            width: 1.25rem;
-            height: 1.25rem;
+            width: 1rem;
+            height: 1rem;
             border-radius: 9999px;
             background: #ffffff;
             transition: transform 0.2s cubic-bezier(0.3, 0, 0, 1);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
         }
 
-        .studio-toggle.active::after {
-            transform: translateX(1.25rem);
+        .toggle-switch.active::after {
+            transform: translateX(1rem);
         }
     </style>
 </head>
-<body class="antialiased text-slate-200">
+<body class="antialiased text-slate-300">
 
-    <!-- Navigation -->
-    <nav class="fixed top-0 left-0 right-0 z-50 glass-nav">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="#" class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center font-bold text-white shadow-lg shadow-orange-500/25">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-                        <circle cx="12" cy="13" r="3"/>
-                    </svg>
-                </div>
-                <div class="flex items-baseline gap-2">
-                    <span class="font-mono font-bold text-base tracking-wider text-white">OPENCAM</span>
-                    <span class="text-[10px] font-mono uppercase tracking-widest text-orange-400 font-bold px-1.5 py-0.5 rounded bg-orange-500/10 border border-orange-500/30">Broadcast Studio</span>
-                </div>
-            </a>
-
-            <div class="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-wider text-slate-300">
-                <a href="#demo" class="hover:text-orange-400 transition flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
-                    <span>Régie Live</span>
+    <!-- Top Navigation Bar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-[#090a0d]/90 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="#" class="flex items-center gap-2.5">
+                    <div class="w-6 h-6 rounded bg-orange-600 flex items-center justify-center font-bold text-white text-xs">
+                        OC
+                    </div>
+                    <span class="font-mono font-bold text-sm tracking-wider text-white">OPENCAM</span>
                 </a>
-                <a href="#bus" class="hover:text-orange-400 transition">Switcher Tally</a>
-                <a href="#center-stage" class="hover:text-orange-400 transition">Center Stage IA</a>
-                <a href="#architecture" class="hover:text-orange-400 transition">Moteur 100% Rust</a>
-                <a href="#comparison" class="hover:text-orange-400 transition">Comparatif</a>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-slate-400">v0.1.0-alpha</span>
+            </div>
+
+            <div class="hidden md:flex items-center gap-6 text-xs font-mono text-slate-400">
+                <a href="#downloads" class="hover:text-white transition">Téléchargements</a>
+                <a href="#demo" class="hover:text-white transition">Interface</a>
+                <a href="#architecture" class="hover:text-white transition">Architecture</a>
+                <a href="#protocol" class="hover:text-white transition">Protocole</a>
+                <a href="#benchmark" class="hover:text-white transition">Comparatif</a>
             </div>
 
             <div class="flex items-center gap-3">
-                <a href="https://github.com/opencamlink/opencamlink" target="_blank" class="px-3.5 py-1.5 text-xs font-mono rounded bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 hover:text-white transition flex items-center gap-1.5">
-                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                    <span>Code Source</span>
+                <a href="https://github.com/opencamlink/opencamlink" target="_blank" class="px-3 py-1.5 text-xs font-mono rounded bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white transition flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    <span>GitHub</span>
                 </a>
-                <a href="#quickstart" class="px-4 py-1.5 text-xs font-mono font-bold uppercase rounded bg-orange-600 text-white shadow-lg shadow-orange-600/30 hover:bg-orange-500 transition">
+                <a href="#downloads" class="px-3 py-1.5 text-xs font-mono font-semibold rounded bg-orange-600 text-white hover:bg-orange-500 transition">
                     Télécharger
                 </a>
             </div>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <header class="pt-32 pb-16 px-4 text-center relative overflow-hidden">
-        <div class="max-w-5xl mx-auto space-y-6">
-            <div class="flex flex-wrap justify-center gap-2">
-                <span class="badge badge-tally-red font-mono">
-                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                    RÉGIE BROADCAST PRO
-                </span>
-                <span class="badge badge-orange font-mono">CODEBASE 100% RUST UNIFIÉE</span>
-                <span class="badge font-mono">LATENCE &lt; 20 ms LAN</span>
-                <span class="badge font-mono">CENTER STAGE IA</span>
+    <!-- Header / Hero Section -->
+    <header class="pt-28 pb-12 px-4 max-w-5xl mx-auto">
+        <div class="space-y-4">
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-white/5 border border-white/10 text-xs font-mono text-slate-300">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span>GitHub Actions CI : Passing</span>
+                <span class="text-slate-600">|</span>
+                <span>100% Rust</span>
+                <span class="text-slate-600">|</span>
+                <span>Zero Cloud</span>
             </div>
 
-            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
-                La puissance d'une régie studio ATEM.<br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-400">
-                    Avec les caméras de vos smartphones.
-                </span>
+            <h1 class="text-3xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
+                Webcam virtuelle & régie multi-caméras 100% Rust.
             </h1>
 
-            <p class="text-base sm:text-lg text-slate-400 max-w-3xl mx-auto leading-relaxed">
-                Connectez simultanément plusieurs smartphones Android et iPhone en Wi-Fi direct. Commutez vos plans en 1 clic grâce au bus Tally (Program / Preview), profitez du cadrage intelligent avec auto-zoom dynamique, et injectez vos flux directement dans <span class="font-mono text-emerald-400">/dev/videoX</span> (Linux v4l2) ou Windows Virtual Camera.
+            <p class="text-base sm:text-lg text-slate-400 max-w-3xl leading-relaxed">
+                Transformez vos smartphones Android et iOS en caméras virtuelles haute fidélité. Commutation instantanée multi-appareils (Program / Preview), flux UDP zéro-buffer à latence &lt; 20ms, cadrage automatique Center Stage et injection directe dans le noyau Linux (<code class="text-emerald-400">v4l2loopback</code>) ou Windows Media Foundation.
             </p>
 
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                <a href="#demo" class="w-full sm:w-auto px-7 py-3 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-mono font-bold text-xs uppercase tracking-wider shadow-xl shadow-orange-600/25 transition flex items-center justify-center gap-2">
-                    <span>Explorer la Régie Interactive</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            <div class="pt-2 flex flex-wrap gap-3">
+                <a href="#downloads" class="px-5 py-2.5 rounded bg-orange-600 hover:bg-orange-500 text-white font-mono text-xs font-semibold tracking-wide transition flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    <span>Télécharger la Release (GitHub Actions)</span>
                 </a>
-                <a href="#quickstart" class="w-full sm:w-auto px-6 py-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-mono text-xs uppercase tracking-wider transition">
-                    Guide de Démarrage Rapide
+                <a href="#demo" class="px-5 py-2.5 rounded bg-[#161922] hover:bg-[#1f2330] text-slate-300 border border-white/10 font-mono text-xs font-semibold transition">
+                    Voir la Régie en Direct
                 </a>
             </div>
         </div>
     </header>
 
-    <!-- Direction 2: Interactive Broadcast Studio Simulator -->
-    <section id="demo" class="py-12 px-4 max-w-7xl mx-auto">
-        <div class="studio-card p-4 sm:p-6 space-y-4 bg-[#12141a] border-slate-800">
-            <!-- Studio Master Bar -->
-            <div class="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-white/5">
-                <div class="flex items-center gap-4">
-                    <div class="flex items-center gap-2 px-3 py-1 rounded bg-black/60 border border-white/10">
-                        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                        <span class="font-mono text-xs font-bold text-white tracking-wider">ON AIR</span>
+    <!-- Download Hub (Built via GitHub Actions) -->
+    <section id="downloads" class="py-10 px-4 max-w-5xl mx-auto border-t border-white/10">
+        <div class="space-y-4 mb-6">
+            <h2 class="text-xl font-bold text-white font-mono flex items-center gap-2">
+                <span>TÉLÉCHARGEMENTS OFFICIELS (RELEASE BUILD)</span>
+            </h2>
+            <p class="text-xs text-slate-400">
+                Binaires compilés automatiquement via GitHub Actions sur chaque commit et tag avec checksums SHA-256 vérifiés.
+            </p>
+        </div>
+
+        <!-- OS Download Tabs -->
+        <div class="window-frame p-5 space-y-6">
+            <div class="flex flex-wrap gap-2 border-b border-white/10 pb-4">
+                <button onclick="setDownloadTab('linux')" id="tab-linux" class="studio-tab active px-4 py-2 rounded font-mono text-xs font-semibold border border-transparent text-slate-300">
+                    Linux (x86_64)
+                </button>
+                <button onclick="setDownloadTab('windows')" id="tab-windows" class="studio-tab px-4 py-2 rounded font-mono text-xs font-semibold border border-transparent text-slate-300">
+                    Windows 10/11 (x86_64)
+                </button>
+                <button onclick="setDownloadTab('android')" id="tab-android" class="studio-tab px-4 py-2 rounded font-mono text-xs font-semibold border border-transparent text-slate-300">
+                    Android (.apk ARM64)
+                </button>
+                <button onclick="setDownloadTab('ios')" id="tab-ios" class="studio-tab px-4 py-2 rounded font-mono text-xs font-semibold border border-transparent text-slate-300">
+                    iOS (.ipa / TestFlight)
+                </button>
+            </div>
+
+            <!-- Tab Content: Linux -->
+            <div id="content-linux" class="space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded bg-[#0b0c10] border border-white/5">
+                    <div>
+                        <div class="font-mono text-sm font-bold text-white">OpenCam Studio Desktop — Linux x86_64</div>
+                        <div class="text-xs text-slate-400 mt-0.5">Archive autonome avec binaire natif et driver v4l2loopback</div>
                     </div>
-                    <div class="flex items-center gap-2 font-mono text-xs text-slate-300">
-                        <span class="text-orange-400 font-bold">TC</span>
-                        <span id="demo-tc" class="font-bold text-white">00:04:12:18</span>
-                    </div>
-                    <div class="hidden sm:flex items-center gap-2 font-mono text-xs text-slate-400">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        <span>LAN: 192.168.1.42:52520 (mDNS)</span>
-                    </div>
+                    <a href="https://github.com/opencamlink/opencamlink/releases/latest/download/opencam-desktop-linux-x86_64.tar.gz" class="px-4 py-2 rounded bg-orange-600 hover:bg-orange-500 text-white font-mono text-xs font-semibold transition flex items-center gap-2">
+                        <span>Télécharger .tar.gz (Release)</span>
+                    </a>
                 </div>
 
-                <div class="flex items-center gap-3 font-mono text-xs">
-                    <span class="text-slate-400">DÉBIT : <span class="text-amber-400 font-bold">5.8 Mbps</span></span>
-                    <span class="text-slate-600">|</span>
-                    <span class="text-slate-400">LATENCE : <span class="text-emerald-400 font-bold">&lt; 14 ms</span></span>
+                <div class="space-y-2">
+                    <div class="text-xs font-mono text-slate-400">Ou installation via Cargo :</div>
+                    <div class="code-block p-3 font-mono text-xs text-slate-300 space-y-1 overflow-x-auto">
+                        <div class="text-slate-500"># 1. Charger le module v4l2loopback pour la caméra virtuelle système</div>
+                        <div><span class="text-orange-400">sudo</span> modprobe v4l2loopback video_nr=10 card_label=<span class="text-emerald-400">"OpenCam Studio"</span> exclusive_caps=1</div>
+                        <div class="text-slate-500 pt-1"># 2. Installer et lancer la régie OpenCam</div>
+                        <div>cargo install --git https://github.com/opencamlink/opencamlink.git app-desktop</div>
+                        <div>opencam-studio</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Camera Switching Bus (ATEM / DaVinci Style) -->
-            <div class="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-black/40 border border-white/5">
+            <!-- Tab Content: Windows -->
+            <div id="content-windows" class="hidden space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded bg-[#0b0c10] border border-white/5">
+                    <div>
+                        <div class="font-mono text-sm font-bold text-white">OpenCam Studio Desktop — Windows x86_64</div>
+                        <div class="text-xs text-slate-400 mt-0.5">Archive portable avec pilote Media Foundation Virtual Camera intégré</div>
+                    </div>
+                    <a href="https://github.com/opencamlink/opencamlink/releases/latest/download/opencam-desktop-windows-x86_64.zip" class="px-4 py-2 rounded bg-orange-600 hover:bg-orange-500 text-white font-mono text-xs font-semibold transition flex items-center gap-2">
+                        <span>Télécharger .zip (Windows 64-bit)</span>
+                    </a>
+                </div>
+                <div class="text-xs font-mono text-slate-400">
+                    Compatible avec Discord, OBS Studio, Zoom, Google Meet et Microsoft Teams sans pilote tiers supplémentaire.
+                </div>
+            </div>
+
+            <!-- Tab Content: Android -->
+            <div id="content-android" class="hidden space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded bg-[#0b0c10] border border-white/5">
+                    <div>
+                        <div class="font-mono text-sm font-bold text-white">OpenCam Mobile — Android APK (arm64-v8a)</div>
+                        <div class="text-xs text-slate-400 mt-0.5">Compilé avec cargo-ndk • AMediaCodec matériel • Camera2 C NDK</div>
+                    </div>
+                    <a href="https://github.com/opencamlink/opencamlink/releases/latest/download/opencam-mobile-android-arm64.zip" class="px-4 py-2 rounded bg-orange-600 hover:bg-orange-500 text-white font-mono text-xs font-semibold transition flex items-center gap-2">
+                        <span>Télécharger le binaire Android</span>
+                    </a>
+                </div>
+                <div class="code-block p-3 font-mono text-xs text-slate-300 space-y-1">
+                    <div class="text-slate-500"># Déploiement direct via ADB sur téléphone connecté en USB</div>
+                    <div>adb install -r opencam-mobile.apk</div>
+                </div>
+            </div>
+
+            <!-- Tab Content: iOS -->
+            <div id="content-ios" class="hidden space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded bg-[#0b0c10] border border-white/5">
+                    <div>
+                        <div class="font-mono text-sm font-bold text-white">OpenCam Mobile — iOS (.ipa)</div>
+                        <div class="text-xs text-slate-400 mt-0.5">Pipeline AVFoundation via Rust FFI (objc2) • Installation via Sideloadly / AltStore</div>
+                    </div>
+                    <a href="https://github.com/opencamlink/opencamlink/releases" class="px-4 py-2 rounded bg-white/10 hover:bg-white/20 text-white font-mono text-xs font-semibold transition">
+                        <span>Voir les Releases iOS</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Desktop App Console Representation -->
+    <section id="demo" class="py-12 px-4 max-w-7xl mx-auto border-t border-white/10">
+        <div class="space-y-2 mb-6">
+            <h2 class="text-xl font-bold text-white font-mono">INTERFACE LOGICIEL (RÉGIE DESKTOP)</h2>
+            <p class="text-xs text-slate-400">
+                Aperçu fidèle de l'interface native egui compilée sur desktop. Cliquez sur les canaux de la barre de commutation pour tester le basculement direct.
+            </p>
+        </div>
+
+        <!-- Window Mockup -->
+        <div class="window-frame overflow-hidden">
+            <!-- Window Title Bar -->
+            <div class="h-9 bg-[#161820] border-b border-white/10 px-3.5 flex items-center justify-between select-none">
                 <div class="flex items-center gap-2">
-                    <span class="text-[11px] font-mono font-bold uppercase tracking-wider text-orange-400">PROGRAM BUS :</span>
+                    <div class="w-3 h-3 rounded-full bg-[#ef4444]/80"></div>
+                    <div class="w-3 h-3 rounded-full bg-[#f59e0b]/80"></div>
+                    <div class="w-3 h-3 rounded-full bg-[#22c55e]/80"></div>
+                    <span class="ml-2 font-mono text-xs text-slate-400">OpenCam Studio — [1920×1080 @ 60 FPS]</span>
+                </div>
+                <div class="flex items-center gap-3 font-mono text-[11px] text-slate-400">
+                    <span class="text-orange-400">PROGRAM BUS ACTIF</span>
+                    <span>•</span>
+                    <span class="text-emerald-400">/dev/video10</span>
+                </div>
+            </div>
+
+            <!-- Console Header Strip -->
+            <div class="bg-[#12141a] px-4 py-2 border-b border-white/10 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 px-2.5 py-0.5 rounded bg-red-950/80 border border-red-500/60 font-mono text-xs text-red-300 font-bold">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                        <span>ON AIR</span>
+                    </div>
+                    <div class="font-mono text-xs text-slate-300">
+                        <span class="text-orange-400 font-bold">TC</span> <span id="tc-display">00:04:12:18</span>
+                    </div>
+                    <div class="font-mono text-xs text-slate-400 hidden sm:block">
+                        LAN : 192.168.1.42:52520 (mDNS)
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 font-mono text-xs text-slate-400">
+                    <div>DÉBIT : <span class="text-amber-400 font-bold">5.82 Mbps</span></div>
+                    <div>LATENCE : <span class="text-emerald-400 font-bold">&lt; 14 ms</span></div>
+                    <div>PERTE UDP : <span class="text-emerald-400 font-bold">0.00%</span></div>
+                </div>
+            </div>
+
+            <!-- Camera Switching Bus (Tally) -->
+            <div class="bg-[#101217] px-4 py-2.5 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] font-mono font-bold uppercase text-orange-400">PROGRAM BUS :</span>
                     <div class="flex flex-wrap gap-2" id="cam-bus-buttons">
-                        <button onclick="selectBusCamera(0)" id="bus-cam-0" class="px-3 py-1.5 rounded font-mono text-xs font-bold transition flex items-center gap-2 bg-red-950/80 border border-red-500 text-white shadow-sm shadow-red-500/20">
-                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                        <button onclick="switchCamera(0)" id="cam-btn-0" class="px-3 py-1 rounded font-mono text-xs font-bold transition flex items-center gap-1.5 bg-red-950/80 border border-red-500 text-white">
+                            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                             <span>CAM 1 : Pixel 7 Pro (1×)</span>
                         </button>
-                        <button onclick="selectBusCamera(1)" id="bus-cam-1" class="px-3 py-1.5 rounded font-mono text-xs font-bold transition flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500/50"></span>
+                        <button onclick="switchCamera(1)" id="cam-btn-1" class="px-3 py-1 rounded font-mono text-xs font-bold transition flex items-center gap-1.5 bg-[#181a24] border border-white/10 text-slate-300 hover:border-slate-500">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
                             <span>CAM 2 : iPhone 15 (Ultra 0.5×)</span>
                         </button>
-                        <button onclick="selectBusCamera(2)" id="bus-cam-2" class="px-3 py-1.5 rounded font-mono text-xs font-bold transition flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500">
-                            <span class="w-2 h-2 rounded-full bg-slate-600"></span>
-                            <span>CAM 3 : Avant (Selfie)</span>
+                        <button onclick="switchCamera(2)" id="cam-btn-2" class="px-3 py-1 rounded font-mono text-xs font-bold transition flex items-center gap-1.5 bg-[#181a24] border border-white/10 text-slate-300 hover:border-slate-500">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                            <span>CAM 3 : Avant (Desk)</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Fast Cut / Auto & View Toggles -->
                 <div class="flex items-center gap-2">
-                    <button onclick="instantCut()" class="px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white font-mono text-xs font-bold uppercase tracking-wider transition">
+                    <button onclick="cutCamera()" class="px-2.5 py-1 rounded bg-orange-600 hover:bg-orange-500 text-white font-mono text-xs font-bold transition">
                         [ CUT ]
                     </button>
-                    <button onclick="toggleSafeZones()" id="btn-safe-zones" class="px-3 py-1.5 rounded bg-slate-800 text-slate-200 border border-slate-700 font-mono text-xs font-medium hover:bg-slate-700 transition">
+                    <button onclick="toggleGuides()" id="btn-guides" class="px-2.5 py-1 rounded bg-[#1c1f2b] text-slate-300 border border-white/10 font-mono text-xs font-medium hover:bg-slate-700 transition">
                         GUIDES SÉCURITÉ : ON
                     </button>
                 </div>
             </div>
 
-            <!-- Viewport & Inspector Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
-                <!-- Main Program Monitor (2 Cols) -->
-                <div class="lg:col-span-2 space-y-2">
-                    <div class="interactive-viewport aspect-video flex items-center justify-center">
+            <!-- Main Work Area : Monitor + Inspector -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 bg-[#0d0f14]">
+                <!-- Monitor (2 cols) -->
+                <div class="lg:col-span-2 p-4 border-b lg:border-b-0 lg:border-r border-white/10 flex flex-col justify-between">
+                    <div class="relative bg-black rounded border border-white/10 aspect-video overflow-hidden flex items-center justify-center">
                         <canvas id="studio-canvas" width="960" height="540" class="w-full h-full object-cover"></canvas>
                     </div>
-                    <div class="flex justify-between items-center text-[11px] font-mono text-slate-400 px-1">
-                        <span id="demo-res">SORTIE VCAM : /dev/video10 • 1920×1080 @ 60 FPS • YUYV 4:2:2</span>
-                        <span class="text-emerald-400">● SIGNAL BUFFER ACCUMULÉ : 0 trames (TEMPS RÉEL PUR)</span>
+
+                    <div class="flex justify-between items-center text-[11px] font-mono text-slate-400 pt-3">
+                        <span>PÉRIPHÉRIQUE SYSTÈME : <code class="text-emerald-400 font-bold">/dev/video10</code> (v4l2loopback)</span>
+                        <span class="text-emerald-400">● 0 TRAMES DE BUFFER ACCUMULÉ (DROP-ON-LATE)</span>
                     </div>
                 </div>
 
-                <!-- Broadcast Rack Inspector (1 Col) -->
-                <div class="space-y-4">
-                    <!-- Rack 1: Center Stage IA -->
-                    <div class="p-4 rounded-lg bg-black/40 border border-white/5 space-y-3">
-                        <div class="flex items-center justify-between pb-2 border-b border-white/5">
-                            <div class="flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
-                                <span class="font-mono text-xs font-bold uppercase tracking-wider text-orange-400">CENTER STAGE IA</span>
-                            </div>
-                            <div id="toggle-tracking" class="studio-toggle active" onclick="toggleCenterStage()"></div>
+                <!-- Inspector Rack (1 col) -->
+                <div class="p-4 space-y-4 bg-[#111319] text-xs font-mono">
+                    <!-- Rack: Virtual Camera Sink -->
+                    <div class="p-3.5 rounded bg-[#161822] border border-white/5 space-y-2.5">
+                        <div class="flex items-center justify-between text-slate-400 border-b border-white/5 pb-2">
+                            <span class="font-bold text-orange-400 uppercase">WEBCAM VIRTUELLE</span>
+                            <span class="text-red-400 font-bold">ON-AIR</span>
+                        </div>
+                        <div class="flex justify-between text-slate-300">
+                            <span>Device :</span>
+                            <span class="text-white font-bold">/dev/video10</span>
+                        </div>
+                        <div class="flex justify-between text-slate-300">
+                            <span>Format noyau :</span>
+                            <span class="text-white">YUYV 4:2:2 (SIMD)</span>
+                        </div>
+                        <button class="w-full py-2 rounded bg-red-950 border border-red-600 text-red-200 font-bold hover:bg-red-900 transition">
+                            DIFFUSION ACTIVE (SYSTÈME)
+                        </button>
+                    </div>
+
+                    <!-- Rack: Center Stage -->
+                    <div class="p-3.5 rounded bg-[#161822] border border-white/5 space-y-3">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                            <span class="font-bold text-orange-400 uppercase">CENTER STAGE IA</span>
+                            <div id="toggle-cs" class="toggle-switch active" onclick="toggleCenterStage()"></div>
                         </div>
 
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="text-slate-300">Auto-zoom selon la distance</span>
-                            <div id="toggle-autozoom" class="studio-toggle active" onclick="toggleAutoZoom()"></div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-300">Auto-zoom distance</span>
+                            <div id="toggle-az" class="toggle-switch active" onclick="toggleAutoZoom()"></div>
                         </div>
 
-                        <div class="space-y-1 pt-1">
-                            <div class="text-[11px] font-mono text-slate-400">CADRAGE DU PLAN :</div>
-                            <div class="grid grid-cols-3 gap-1.5 font-mono text-xs">
-                                <button onclick="setFraming('head')" id="mode-head" class="py-1 px-2 rounded font-bold bg-slate-800 text-slate-300 hover:bg-slate-700">VISAGE</button>
-                                <button onclick="setFraming('torso')" id="mode-torso" class="py-1 px-2 rounded font-bold bg-orange-600 text-white shadow-sm shadow-orange-600/30">BUSTE</button>
-                                <button onclick="setFraming('wide')" id="mode-wide" class="py-1 px-2 rounded font-bold bg-slate-800 text-slate-300 hover:bg-slate-700">LARGE</button>
+                        <div class="space-y-1">
+                            <div class="text-slate-400 text-[10px]">CADRAGE :</div>
+                            <div class="grid grid-cols-3 gap-1">
+                                <button onclick="setFraming('head')" id="frame-head" class="py-1 rounded bg-[#202434] text-slate-300 hover:bg-slate-700">VISAGE</button>
+                                <button onclick="setFraming('torso')" id="frame-torso" class="py-1 rounded bg-orange-600 text-white font-bold">BUSTE</button>
+                                <button onclick="setFraming('wide')" id="frame-wide" class="py-1 rounded bg-[#202434] text-slate-300 hover:bg-slate-700">LARGE</button>
                             </div>
                         </div>
 
-                        <!-- Distance Simulation Slider -->
-                        <div class="space-y-1.5 pt-2 border-t border-white/5">
-                            <div class="flex justify-between items-center text-xs font-mono">
-                                <span class="text-slate-300">Distance du sujet</span>
-                                <span id="dist-label" class="text-orange-400 font-bold">1.25 m [OPTIMAL]</span>
+                        <div class="space-y-1.5 pt-1">
+                            <div class="flex justify-between text-slate-400">
+                                <span>Distance du sujet :</span>
+                                <span id="dist-val" class="text-orange-400 font-bold">1.25 m</span>
                             </div>
-                            <input type="range" id="dist-slider" min="0.5" max="3.0" step="0.05" value="1.25" oninput="updateDistance(this.value)" class="w-full accent-orange-500 cursor-pointer">
-                            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
-                                <span>Proche (0.5m)</span>
-                                <span>Éloigné (3.0m)</span>
-                            </div>
+                            <input type="range" id="dist-slider" min="0.5" max="3.0" step="0.05" value="1.25" oninput="setDistance(this.value)" class="w-full accent-orange-500 cursor-pointer">
                         </div>
                     </div>
 
-                    <!-- Rack 2: Optique & Capteur -->
-                    <div class="p-4 rounded-lg bg-black/40 border border-white/5 space-y-3">
-                        <div class="flex items-center gap-2 pb-2 border-b border-white/5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
-                            <span class="font-mono text-xs font-bold uppercase tracking-wider text-orange-400">OPTIQUE SMARTPHONE</span>
-                        </div>
-
+                    <!-- Rack: Optique & Capteur -->
+                    <div class="p-3.5 rounded bg-[#161822] border border-white/5 space-y-2.5">
+                        <span class="font-bold text-orange-400 uppercase block border-b border-white/5 pb-2">OPTIQUE SMARTPHONE</span>
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="toggleMirror()" id="btn-mirror" class="py-2 px-3 rounded font-mono text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+                            <button onclick="toggleMirror()" id="btn-mirror" class="py-1.5 rounded bg-[#202434] border border-white/10 text-slate-300 hover:bg-slate-700 transition">
                                 MIROIR H : OFF
                             </button>
-                            <button onclick="toggleTorchDemo()" id="btn-torch" class="py-2 px-3 rounded font-mono text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
-                                FLASH TORCHE : OFF
+                            <button onclick="toggleTorch()" id="btn-torch" class="py-1.5 rounded bg-[#202434] border border-white/10 text-slate-300 hover:bg-slate-700 transition">
+                                TORCHE : OFF
                             </button>
                         </div>
-                    </div>
-
-                    <!-- Telemetry Live Card -->
-                    <div class="p-3.5 rounded-lg bg-black/60 border border-white/5 font-mono text-[11px] space-y-1">
-                        <div class="text-slate-400">CIBLE : <span class="text-emerald-400 font-bold">SUJET 01 VERROUILLÉ (98%)</span></div>
-                        <div class="text-slate-400">CODEC : <span class="text-white font-bold">AMediaCodec H.264 HW</span></div>
-                        <div class="text-slate-400">AMORTI : <span class="text-orange-400 font-bold">0.15s (FILTRE EXPONENTIEL)</span></div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Key Architectural Features -->
-    <section id="architecture" class="py-20 px-4 max-w-7xl mx-auto border-t border-white/5">
-        <div class="text-center space-y-3 mb-16">
-            <span class="badge badge-orange font-mono">INGÉNIERIE BROADCAST</span>
-            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Pourquoi OpenCam surpasse les solutions existantes</h2>
-            <p class="text-sm text-slate-400 max-w-2xl mx-auto">
-                Conçu dès la première ligne en Rust natif pour éliminer la gigue de buffer, préserver l'autonomie du téléphone et offrir une image digne des caméras dédiées.
+    <!-- Technical Architecture Specifications -->
+    <section id="architecture" class="py-16 px-4 max-w-5xl mx-auto border-t border-white/10">
+        <div class="space-y-3 mb-10">
+            <h2 class="text-xl font-bold text-white font-mono">SPÉCIFICATIONS TECHNIQUES DE L'ARCHITECTURE</h2>
+            <p class="text-xs text-slate-400">
+                Structure modulaire découplée en crates Rust indépendantes.
             </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Card 1 -->
-            <div class="studio-card p-6 space-y-4">
-                <div class="w-10 h-10 rounded bg-orange-600/10 border border-orange-500/30 text-orange-400 flex items-center justify-center font-bold">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                </div>
-                <h3 class="text-lg font-bold text-white font-mono">Latence &lt; 20 ms (UDP Drop-on-Late)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Box 1 -->
+            <div class="window-frame p-5 space-y-3">
+                <div class="font-mono text-xs font-bold text-orange-400">01 / PROTOCOLE VIDÉO UDP (DROP-ON-LATE)</div>
+                <h3 class="text-sm font-bold text-white font-mono">Zéro Accumulation de Latence</h3>
                 <p class="text-xs text-slate-400 leading-relaxed">
-                    Contrairement aux applications TCP qui accumulent du retard dès qu'un paquet subit une micro-coupure Wi-Fi, notre réassembleur UDP élimine automatiquement les trames obsolètes. Le flux reste toujours synchronisé avec votre voix.
+                    Les flux TCP classiques (RTMP, RTSP sur TCP) provoquent des gels d'image puis une avance rapide dès qu'un paquet est réémis. Le réassembleur UDP OpenCam élimine immédiatement toute trame partielle dont la séquence est dépassée. Le flux reste calé en temps réel avec une latence inférieure à 20 millisecondes sur réseau local Wi-Fi 5GHz.
                 </p>
-                <div class="pt-2 text-xs font-mono text-orange-400 font-semibold">Protocole binaire 32-octets "OCLV"</div>
+                <div class="text-[11px] font-mono text-slate-500">crate : <code class="text-slate-300">crates/core-protocol/src/packet.rs</code></div>
             </div>
 
-            <!-- Card 2 -->
-            <div class="studio-card p-6 space-y-4">
-                <div class="w-10 h-10 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                </div>
-                <h3 class="text-lg font-bold text-white font-mono">Center Stage & Auto-Zoom par Distance</h3>
+            <!-- Box 2 -->
+            <div class="window-frame p-5 space-y-3">
+                <div class="font-mono text-xs font-bold text-orange-400">02 / CADRAGE CENTER STAGE & DISTANCE AUTO-ZOOM</div>
+                <h3 class="text-sm font-bold text-white font-mono">Filtre Exponentiel du 2nd Degré</h3>
                 <p class="text-xs text-slate-400 leading-relaxed">
-                    Grâce au calcul de cadrage en temps réel, la caméra suit vos mouvements de tête avec un amorti cinématographique doux. Si vous reculez dans votre pièce, le zoom s'ajuste dynamiquement pour conserver le cadrage idéal.
+                    Le module de suivi analyse la position normalisée de la boîte englobante du visage et sa hauteur relative. L'auto-zoom compense automatiquement le recul de l'intervenant pour maintenir un plan stable (visage, buste ou plan large) avec un amorti de mouvement réglable sans à-coups.
                 </p>
-                <div class="pt-2 text-xs font-mono text-amber-400 font-semibold">Filtre exponentiel & Modes Buste/Visage</div>
+                <div class="text-[11px] font-mono text-slate-500">crate : <code class="text-slate-300">crates/camera-capture/src/face_tracking.rs</code></div>
             </div>
 
-            <!-- Card 3 -->
-            <div class="studio-card p-6 space-y-4">
-                <div class="w-10 h-10 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                </div>
-                <h3 class="text-lg font-bold text-white font-mono">Intégration Pilote Natif (V4L2 / MF)</h3>
+            <!-- Box 3 -->
+            <div class="window-frame p-5 space-y-3">
+                <div class="font-mono text-xs font-bold text-orange-400">03 / SORTIE SYSTÈME LINUX & WINDOWS</div>
+                <h3 class="text-sm font-bold text-white font-mono">Direct Kernel Loopback & MF Driver</h3>
                 <p class="text-xs text-slate-400 leading-relaxed">
-                    Sous Linux, OpenCam injecte directement les trames dans <code class="text-emerald-400">/dev/videoX</code> via <code class="text-emerald-400">v4l2loopback</code> au format standard YUYV. Compatible sans aucun plugin avec Discord, OBS Studio, Google Meet, Zoom et Teams.
+                    Sous Linux, les trames décodées sont converties en YUYV 4:2:2 via instructions SIMD rapides et écrites directement dans le descripteur ioctl de <code class="text-emerald-400">/dev/videoX</code>. Sous Windows, l'injection s'effectue via l'interface Virtual Camera de Media Foundation.
                 </p>
-                <div class="pt-2 text-xs font-mono text-emerald-400 font-semibold">100% Pilote système local</div>
+                <div class="text-[11px] font-mono text-slate-500">crate : <code class="text-slate-300">crates/vcam-sink/src/linux.rs</code></div>
+            </div>
+
+            <!-- Box 4 -->
+            <div class="window-frame p-5 space-y-3">
+                <div class="font-mono text-xs font-bold text-orange-400">04 / CAPTURE MOBILE NATIVE SANS SURCOUCHE</div>
+                <h3 class="text-sm font-bold text-white font-mono">Android Camera2 NDK & iOS AVFoundation</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Aucun framework hybride lourd (Flutter, React Native ou Electron). Le code mobile compile directement en binaire natif via <code class="text-orange-400">cargo-ndk</code> (Android) et <code class="text-orange-400">cargo-apple</code> (iOS) avec encodage matériel direct pour minimiser l'échauffement de la batterie.
+                </p>
+                <div class="text-[11px] font-mono text-slate-500">crate : <code class="text-slate-300">crates/camera-capture/src/android.rs</code></div>
             </div>
         </div>
     </section>
 
-    <!-- Comparison Table -->
-    <section id="comparison" class="py-20 px-4 max-w-6xl mx-auto border-t border-white/5">
-        <div class="text-center space-y-3 mb-12">
-            <span class="badge badge-orange font-mono">BENCHMARK COMPARATIF</span>
-            <h2 class="text-3xl font-extrabold text-white">OpenCam face aux logiciels existants</h2>
+    <!-- Technical Comparison Benchmark -->
+    <section id="benchmark" class="py-16 px-4 max-w-5xl mx-auto border-t border-white/10">
+        <div class="space-y-3 mb-8">
+            <h2 class="text-xl font-bold text-white font-mono">COMPARATIF TECHNIQUE OBJECTIF</h2>
+            <p class="text-xs text-slate-400">
+                Caractéristiques d'architecture face aux solutions propriétaires existantes.
+            </p>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm border-collapse">
+        <div class="window-frame overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono border-collapse">
                 <thead>
-                    <tr class="border-b border-white/10 text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider">
-                        <th class="py-4 px-4">Fonctionnalité</th>
-                        <th class="py-4 px-4 text-orange-400 font-bold">OpenCam Studio</th>
-                        <th class="py-4 px-4">iVCam</th>
-                        <th class="py-4 px-4">Camo Studio</th>
-                        <th class="py-4 px-4">DroidCam</th>
+                    <tr class="border-b border-white/10 text-slate-400 uppercase bg-[#14161f]">
+                        <th class="py-3 px-4">Spécification</th>
+                        <th class="py-3 px-4 text-orange-400 font-bold">OpenCam Studio</th>
+                        <th class="py-3 px-4">iVCam</th>
+                        <th class="py-3 px-4">Camo Studio</th>
+                        <th class="py-3 px-4">DroidCam</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-white/5 text-slate-300 font-mono text-xs">
+                <tbody class="divide-y divide-white/5 text-slate-300">
                     <tr>
-                        <td class="py-3.5 px-4 font-semibold text-white">Codebase & Performance</td>
-                        <td class="py-3.5 px-4 font-bold text-emerald-400">100% Rust Unifié</td>
-                        <td class="py-3.5 px-4 text-slate-400">C++ Propriétaire</td>
-                        <td class="py-3.5 px-4 text-slate-400">Swift / C# / C++</td>
-                        <td class="py-3.5 px-4 text-slate-400">C / Java</td>
+                        <td class="py-3 px-4 text-white font-semibold">Protocole réseau vidéo</td>
+                        <td class="py-3 px-4 text-emerald-400 font-bold">UDP (Drop-on-late)</td>
+                        <td class="py-3 px-4 text-slate-400">TCP (Accumulation de buffer)</td>
+                        <td class="py-3 px-4 text-slate-400">Propriétaire USB/Wi-Fi</td>
+                        <td class="py-3 px-4 text-slate-400">HTTP / TCP</td>
                     </tr>
                     <tr>
-                        <td class="py-3.5 px-4 font-semibold text-white">Switcher Multi-Cam (Bus Tally)</td>
-                        <td class="py-3.5 px-4 font-bold text-emerald-400">Inclus (Style ATEM 1-clic)</td>
-                        <td class="py-3.5 px-4 text-red-400">Non</td>
-                        <td class="py-3.5 px-4 text-slate-400">Basique</td>
-                        <td class="py-3.5 px-4 text-red-400">Non</td>
+                        <td class="py-3 px-4 text-white font-semibold">Latence moyenne (Wi-Fi 5GHz)</td>
+                        <td class="py-3 px-4 text-emerald-400 font-bold">&lt; 20 ms</td>
+                        <td class="py-3 px-4 text-slate-400">60 - 150 ms</td>
+                        <td class="py-3 px-4 text-slate-400">40 - 80 ms</td>
+                        <td class="py-3 px-4 text-slate-400">80 - 120 ms</td>
                     </tr>
                     <tr>
-                        <td class="py-3.5 px-4 font-semibold text-white">Latence Réseau</td>
-                        <td class="py-3.5 px-4 font-bold text-emerald-400">&lt; 20 ms (UDP drop-on-late)</td>
-                        <td class="py-3.5 px-4 text-slate-400">~60 - 150 ms (TCP buffer)</td>
-                        <td class="py-3.5 px-4 text-slate-400">~40 - 80 ms</td>
-                        <td class="py-3.5 px-4 text-slate-400">~80 - 120 ms</td>
+                        <td class="py-3 px-4 text-white font-semibold">Commutation Régie Multi-Cam</td>
+                        <td class="py-3 px-4 text-emerald-400 font-bold">Oui (Bus Tally 1-clic)</td>
+                        <td class="py-3 px-4 text-red-400">Non</td>
+                        <td class="py-3 px-4 text-slate-400">Basique</td>
+                        <td class="py-3 px-4 text-red-400">Non</td>
                     </tr>
                     <tr>
-                        <td class="py-3.5 px-4 font-semibold text-white">Suivi de la tête (Center Stage)</td>
-                        <td class="py-3.5 px-4 font-bold text-emerald-400">Inclus & Temps Réel</td>
-                        <td class="py-3.5 px-4 text-red-400">Non</td>
-                        <td class="py-3.5 px-4 text-slate-400">Spotlight (payant)</td>
-                        <td class="py-3.5 px-4 text-red-400">Non</td>
+                        <td class="py-3 px-4 text-white font-semibold">Suivi de tête Center Stage</td>
+                        <td class="py-3 px-4 text-emerald-400 font-bold">Inclus (Filtre dynamique)</td>
+                        <td class="py-3 px-4 text-red-400">Non</td>
+                        <td class="py-3 px-4 text-slate-400">Spotlight (version payante)</td>
+                        <td class="py-3 px-4 text-red-400">Non</td>
                     </tr>
                     <tr>
-                        <td class="py-3.5 px-4 font-semibold text-white">Zoom auto selon distance</td>
-                        <td class="py-3.5 px-4 font-bold text-emerald-400">Oui (Dynamique)</td>
-                        <td class="py-3.5 px-4 text-red-400">Non</td>
-                        <td class="py-3.5 px-4 text-slate-400">Partiel</td>
-                        <td class="py-3.5 px-4 text-red-400">Non</td>
+                        <td class="py-3 px-4 text-white font-semibold">Auto-zoom par distance</td>
+                        <td class="py-3 px-4 text-emerald-400 font-bold">Oui (Temps réel)</td>
+                        <td class="py-3 px-4 text-red-400">Non</td>
+                        <td class="py-3 px-4 text-slate-400">Limité</td>
+                        <td class="py-3 px-4 text-red-400">Non</td>
                     </tr>
                     <tr>
-                        <td class="py-3.5 px-4 font-semibold text-white">Confidentialité & Cloud</td>
-                        <td class="py-3.5 px-4 font-bold text-emerald-400">100% Réseau Local</td>
-                        <td class="py-3.5 px-4 text-slate-400">Local</td>
-                        <td class="py-3.5 px-4 text-slate-400">Compte requis</td>
-                        <td class="py-3.5 px-4 text-slate-400">Local</td>
+                        <td class="py-3 px-4 text-white font-semibold">Codebase & Empreinte RAM</td>
+                        <td class="py-3 px-4 text-emerald-400 font-bold">100% Rust (~30 Mo)</td>
+                        <td class="py-3 px-4 text-slate-400">C++ Propriétaire (~80 Mo)</td>
+                        <td class="py-3 px-4 text-slate-400">Swift / C# (~250 Mo)</td>
+                        <td class="py-3 px-4 text-slate-400">C / Java (~60 Mo)</td>
+                    </tr>
+                    <tr>
+                        <td class="py-3 px-4 text-white font-semibold">Licence & Confidentialité</td>
+                        <td class="py-3 px-4 text-emerald-400 font-bold">Open-Source (MIT / Apache)</td>
+                        <td class="py-3 px-4 text-red-400">Propriétaire (Filigrane)</td>
+                        <td class="py-3 px-4 text-slate-400">Freemium (Abonnement)</td>
+                        <td class="py-3 px-4 text-slate-400">Propriétaire (Publicités)</td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </section>
 
-    <!-- Quickstart Guide -->
-    <section id="quickstart" class="py-20 px-4 max-w-5xl mx-auto border-t border-white/5">
-        <div class="text-center space-y-3 mb-12">
-            <span class="badge badge-orange font-mono">DÉMARRAGE RAPIDE</span>
-            <h2 class="text-3xl font-extrabold text-white">Compiler et Lancer OpenCam en 2 minutes</h2>
-        </div>
-
-        <div class="space-y-6">
-            <!-- Step 1 -->
-            <div class="studio-card p-6 space-y-3">
-                <div class="flex items-center gap-3">
-                    <span class="w-6 h-6 rounded bg-orange-600 font-mono font-bold text-xs text-white flex items-center justify-center">1</span>
-                    <h3 class="text-base font-bold text-white font-mono">Créer le device virtuel v4l2loopback (Linux)</h3>
-                </div>
-                <p class="text-xs text-slate-400">Chargez le module noyau Linux pour créer le périphérique webcam virtuelle accessible par OBS et vos navigateurs :</p>
-                <div class="p-3 rounded bg-black/60 border border-white/5 font-mono text-xs text-emerald-400 overflow-x-auto">
-                    sudo modprobe v4l2loopback video_nr=10 card_label="OpenCam Studio" exclusive_caps=1
-                </div>
-            </div>
-
-            <!-- Step 2 -->
-            <div class="studio-card p-6 space-y-3">
-                <div class="flex items-center gap-3">
-                    <span class="w-6 h-6 rounded bg-orange-600 font-mono font-bold text-xs text-white flex items-center justify-center">2</span>
-                    <h3 class="text-base font-bold text-white font-mono">Lancer la régie Desktop OpenCam</h3>
-                </div>
-                <p class="text-xs text-slate-400">Exécutez le récepteur Desktop. L'annonce mDNS sur <code class="text-orange-400 font-mono">_opencam._tcp.local</code> démarre automatiquement :</p>
-                <div class="p-3 rounded bg-black/60 border border-white/5 font-mono text-xs text-emerald-400 overflow-x-auto">
-                    cargo run -p app-desktop --release
-                </div>
-            </div>
-
-            <!-- Step 3 -->
-            <div class="studio-card p-6 space-y-3">
-                <div class="flex items-center gap-3">
-                    <span class="w-6 h-6 rounded bg-orange-600 font-mono font-bold text-xs text-white flex items-center justify-center">3</span>
-                    <h3 class="text-base font-bold text-white font-mono">Compiler l'APK Android (ou iOS)</h3>
-                </div>
-                <p class="text-xs text-slate-400">Générez la bibliothèque partagée native NDK avec <code class="text-orange-400 font-mono">cargo-ndk</code> pour Android :</p>
-                <div class="p-3 rounded bg-black/60 border border-white/5 font-mono text-xs text-emerald-400 overflow-x-auto">
-                    cd crates/app-mobile/android && ./build-android.sh
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Footer -->
-    <footer class="py-12 px-4 border-t border-white/5 text-center text-xs font-mono text-slate-500">
-        <p>OpenCam — Suite Webcam Virtuelle & Régie Broadcast 100% Rust Multiplateforme.</p>
-        <p class="mt-1">Licence Open-Source (MIT / Apache 2.0). Zéro télémétrie cloud. 100% Local.</p>
+    <footer class="py-10 px-4 border-t border-white/10 text-center font-mono text-xs text-slate-500">
+        <div class="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div>OpenCam — Suite Webcam Virtuelle 100% Rust Multiplateforme.</div>
+            <div class="flex items-center gap-4 text-slate-400">
+                <a href="https://github.com/opencamlink/opencamlink" class="hover:text-white transition">GitHub Repo</a>
+                <a href="https://github.com/opencamlink/opencamlink/actions" class="hover:text-white transition">GitHub Actions</a>
+                <a href="https://github.com/opencamlink/opencamlink/releases" class="hover:text-white transition">Releases</a>
+            </div>
+        </div>
     </footer>
 
-    <!-- Interactive Canvas Simulation Script -->
+    <!-- Interactive Simulator Script (Pixel-Accurate Technical HUD) -->
     <script>
         const canvas = document.getElementById('studio-canvas');
         const ctx = canvas.getContext('2d');
 
         // Studio State
+        let currentCam = 0;
         let centerStage = true;
         let autoZoom = true;
         let framingMode = 'torso'; // 'head', 'torso', 'wide'
-        let subjectDistance = 1.25; // meters
+        let subjectDistance = 1.25;
+        let showGuides = true;
         let mirrorH = false;
-        let torchActive = false;
-        let showSafeZones = true;
-        let currentBusCamera = 0; // 0 = Pixel 7, 1 = iPhone 15, 2 = Front
+        let torchOn = false;
 
-        // Cameras definition for switching bus
         const cameras = [
-            { name: "Pixel 7 Pro (1×)", baseZoom: 1.0, sensor: "Principal 24mm f/1.85", pgm: true },
-            { name: "iPhone 15 (Ultra 0.5×)", baseZoom: 0.6, sensor: "Ultra-Wide 13mm f/2.2", pgm: false },
-            { name: "Avant (Selfie)", baseZoom: 1.1, sensor: "Front Camera 12MP", pgm: false },
+            { name: "Pixel 7 Pro (1×)", focal: "24mm f/1.85", baseScale: 1.0 },
+            { name: "iPhone 15 (Ultra 0.5×)", focal: "13mm f/2.2", baseScale: 0.6 },
+            { name: "Avant (Desk 1.2×)", focal: "Front 12MP", baseScale: 1.15 }
         ];
 
-        // Smooth state variables
-        let currentCx = 0.5;
-        let currentCy = 0.5;
-        let currentZoom = 1.0;
+        let curCx = 0.5;
+        let curCy = 0.5;
+        let curZoom = 1.0;
         let startTime = performance.now();
 
-        function selectBusCamera(idx) {
-            currentBusCamera = idx;
+        function switchCamera(idx) {
+            currentCam = idx;
             for (let i = 0; i < 3; i++) {
-                const btn = document.getElementById(`bus-cam-` + i);
+                const btn = document.getElementById('cam-btn-' + i);
                 if (i === idx) {
-                    btn.className = "px-3 py-1.5 rounded font-mono text-xs font-bold transition flex items-center gap-2 bg-red-950/80 border border-red-500 text-white shadow-sm shadow-red-500/20";
-                    btn.querySelector('span:first-child').className = "w-2 h-2 rounded-full bg-red-500";
+                    btn.className = "px-3 py-1 rounded font-mono text-xs font-bold transition flex items-center gap-1.5 bg-red-950/80 border border-red-500 text-white";
+                    btn.querySelector('span:first-child').className = "w-1.5 h-1.5 rounded-full bg-red-500";
                 } else {
-                    btn.className = "px-3 py-1.5 rounded font-mono text-xs font-bold transition flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500";
-                    btn.querySelector('span:first-child').className = "w-2 h-2 rounded-full bg-slate-600";
+                    btn.className = "px-3 py-1 rounded font-mono text-xs font-bold transition flex items-center gap-1.5 bg-[#181a24] border border-white/10 text-slate-300 hover:border-slate-500";
+                    btn.querySelector('span:first-child').className = "w-1.5 h-1.5 rounded-full bg-slate-500";
                 }
             }
         }
 
-        function instantCut() {
-            // Cut to next camera in bus
-            selectBusCamera((currentBusCamera + 1) % 3);
+        function cutCamera() {
+            switchCamera((currentCam + 1) % 3);
         }
 
-        function toggleSafeZones() {
-            showSafeZones = !showSafeZones;
-            const btn = document.getElementById('btn-safe-zones');
-            btn.innerText = `GUIDES SÉCURITÉ : ${showSafeZones ? 'ON' : 'OFF'}`;
-            btn.className = showSafeZones
-                ? "px-3 py-1.5 rounded bg-slate-800 text-slate-200 border border-slate-700 font-mono text-xs font-medium hover:bg-slate-700 transition"
-                : "px-3 py-1.5 rounded bg-slate-900 text-slate-500 border border-slate-800 font-mono text-xs font-medium hover:bg-slate-800 transition";
+        function toggleGuides() {
+            showGuides = !showGuides;
+            document.getElementById('btn-guides').innerText = `GUIDES SÉCURITÉ : ${showGuides ? 'ON' : 'OFF'}`;
         }
 
         function toggleCenterStage() {
             centerStage = !centerStage;
-            const el = document.getElementById('toggle-tracking');
-            el.className = centerStage ? 'studio-toggle active' : 'studio-toggle';
+            document.getElementById('toggle-cs').className = centerStage ? 'toggle-switch active' : 'toggle-switch';
         }
 
         function toggleAutoZoom() {
             autoZoom = !autoZoom;
-            const el = document.getElementById('toggle-autozoom');
-            el.className = autoZoom ? 'studio-toggle active' : 'studio-toggle';
+            document.getElementById('toggle-az').className = autoZoom ? 'toggle-switch active' : 'toggle-switch';
         }
 
         function setFraming(mode) {
             framingMode = mode;
             ['head', 'torso', 'wide'].forEach(m => {
-                const btn = document.getElementById(`mode-${m}`);
-                if (m === mode) {
-                    btn.className = 'py-1 px-2 rounded font-bold bg-orange-600 text-white shadow-sm shadow-orange-600/30';
-                } else {
-                    btn.className = 'py-1 px-2 rounded font-bold bg-slate-800 text-slate-300 hover:bg-slate-700';
-                }
+                const btn = document.getElementById(`frame-${m}`);
+                btn.className = (m === mode)
+                    ? 'py-1 rounded bg-orange-600 text-white font-bold'
+                    : 'py-1 rounded bg-[#202434] text-slate-300 hover:bg-slate-700';
             });
         }
 
-        function updateDistance(val) {
+        function setDistance(val) {
             subjectDistance = parseFloat(val);
-            const label = document.getElementById('dist-label');
-            let desc = "OPTIMAL";
-            if (subjectDistance < 0.8) desc = "PROCHE";
-            if (subjectDistance > 1.8) desc = "ÉLOIGNÉ";
-            label.innerText = `${subjectDistance.toFixed(2)} m [${desc}]`;
+            document.getElementById('dist-val').innerText = `${subjectDistance.toFixed(2)} m`;
         }
 
         function toggleMirror() {
@@ -605,107 +634,102 @@
             const btn = document.getElementById('btn-mirror');
             btn.innerText = `MIROIR H : ${mirrorH ? 'ON' : 'OFF'}`;
             btn.className = mirrorH
-                ? 'py-2 px-3 rounded font-mono text-xs font-bold bg-orange-600 text-white border border-orange-500 transition'
-                : 'py-2 px-3 rounded font-mono text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition';
+                ? 'py-1.5 rounded bg-orange-600 text-white font-bold border border-orange-500 transition'
+                : 'py-1.5 rounded bg-[#202434] border border-white/10 text-slate-300 hover:bg-slate-700 transition';
         }
 
-        function toggleTorchDemo() {
-            torchActive = !torchActive;
+        function toggleTorch() {
+            torchOn = !torchOn;
             const btn = document.getElementById('btn-torch');
-            btn.innerText = `FLASH TORCHE : ${torchActive ? 'ON' : 'OFF'}`;
-            btn.className = torchActive
-                ? 'py-2 px-3 rounded font-mono text-xs font-bold bg-amber-500 text-slate-950 font-bold border border-amber-400 transition'
-                : 'py-2 px-3 rounded font-mono text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition';
+            btn.innerText = `TORCHE : ${torchOn ? 'ON' : 'OFF'}`;
+            btn.className = torchOn
+                ? 'py-1.5 rounded bg-amber-500 text-black font-bold border border-amber-400 transition'
+                : 'py-1.5 rounded bg-[#202434] border border-white/10 text-slate-300 hover:bg-slate-700 transition';
         }
 
-        // SMPTE Timecode Counter
-        function updateTimecode() {
-            const elapsed = (performance.now() - startTime) / 1000;
-            const hrs = Math.floor(elapsed / 3600).toString().padStart(2, '0');
-            const mins = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
-            const secs = Math.floor(elapsed % 60).toString().padStart(2, '0');
-            const frames = Math.floor((elapsed % 1) * 30).toString().padStart(2, '0');
-            document.getElementById('demo-tc').innerText = `${hrs}:${mins}:${secs}:${frames}`;
+        function setDownloadTab(os) {
+            ['linux', 'windows', 'android', 'ios'].forEach(tab => {
+                document.getElementById(`tab-${tab}`).className = (tab === os)
+                    ? 'studio-tab active px-4 py-2 rounded font-mono text-xs font-semibold border border-transparent text-white'
+                    : 'studio-tab px-4 py-2 rounded font-mono text-xs font-semibold border border-transparent text-slate-400 hover:text-slate-200';
+                document.getElementById(`content-${tab}`).className = (tab === os) ? 'space-y-4' : 'hidden space-y-4';
+            });
         }
 
-        // 60 FPS Render Loop
-        function renderLoop() {
-            updateTimecode();
+        // SMPTE Timecode
+        function updateTC() {
+            const el = (performance.now() - startTime) / 1000;
+            const h = Math.floor(el / 3600).toString().padStart(2, '0');
+            const m = Math.floor((el % 3600) / 60).toString().padStart(2, '0');
+            const s = Math.floor(el % 60).toString().padStart(2, '0');
+            const f = Math.floor((el % 1) * 30).toString().padStart(2, '0');
+            document.getElementById('tc-display').innerText = `${h}:${m}:${s}:${f}`;
+        }
+
+        // Canvas 60 FPS Render
+        function render() {
+            updateTC();
             const time = performance.now() * 0.0015;
             const w = canvas.width;
             const h = canvas.height;
+            const cam = cameras[currentCam];
 
-            const activeCam = cameras[currentBusCamera];
+            // Simulated realistic subject movement
+            const targetX = 0.5 + Math.sin(time * 0.7) * 0.12;
+            const targetY = 0.43 + Math.cos(time * 0.5) * 0.04;
 
-            // Simulated subject moving naturally
-            const targetHeadX = 0.5 + Math.sin(time * 0.8) * 0.14;
-            const targetHeadY = 0.42 + Math.cos(time * 0.6) * 0.05;
+            const baseFaceH = (0.30 / subjectDistance).clamp(0.10, 0.45) * cam.baseScale;
+            const baseFaceW = baseFaceH * 0.75;
 
-            // Distance effect on apparent face size
-            const baseFaceHeight = (0.32 / subjectDistance).clamp(0.10, 0.45) * activeCam.baseZoom;
-            const baseFaceWidth = baseFaceHeight * 0.75;
-
-            // Desired framing ratio
             const desiredRatio = framingMode === 'head' ? 0.35 : (framingMode === 'torso' ? 0.22 : 0.14);
-
             let targetZoom = 1.0;
             if (centerStage && autoZoom) {
-                targetZoom = (desiredRatio / baseFaceHeight).clamp(1.0, 3.5);
+                targetZoom = (desiredRatio / baseFaceH).clamp(1.0, 3.5);
             }
 
-            // Smooth spring damping towards target
             const alpha = centerStage ? 0.08 : 0.04;
-            const targetCenterX = centerStage ? targetHeadX : 0.5;
-            const targetCenterY = centerStage ? (targetHeadY + 0.06) : 0.5;
+            const targetCenterX = centerStage ? targetX : 0.5;
+            const targetCenterY = centerStage ? (targetY + 0.05) : 0.5;
 
-            currentCx += (targetCenterX - currentCx) * alpha;
-            currentCy += (targetCenterY - currentCy) * alpha;
-            currentZoom += (targetZoom - currentZoom) * alpha;
+            curCx += (targetCenterX - curCx) * alpha;
+            curCy += (targetCenterY - curCy) * alpha;
+            curZoom += (targetZoom - curZoom) * alpha;
 
             ctx.save();
-
-            // Clear background with soft vignette
-            ctx.fillStyle = torchActive ? '#151922' : '#0a0d13';
+            ctx.fillStyle = torchOn ? '#171922' : '#0a0b0f';
             ctx.fillRect(0, 0, w, h);
 
-            // Studio background lighting
-            const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 80, w / 2, h / 2, w * 0.65);
-            bgGrad.addColorStop(0, torchActive ? 'rgba(45, 55, 75, 0.9)' : 'rgba(24, 28, 40, 0.85)');
-            bgGrad.addColorStop(1, 'rgba(8, 10, 14, 1)');
+            // Studio backdrop gradient
+            const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 90, w / 2, h / 2, w * 0.7);
+            bgGrad.addColorStop(0, torchOn ? 'rgba(50, 60, 80, 0.85)' : 'rgba(22, 26, 36, 0.85)');
+            bgGrad.addColorStop(1, 'rgba(8, 9, 12, 1)');
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, w, h);
 
-            // Apply camera transform: dynamic zoom centered around (currentCx, currentCy)
             ctx.translate(w / 2, h / 2);
-            ctx.scale(mirrorH ? -currentZoom : currentZoom, currentZoom);
-            ctx.translate(-currentCx * w, -currentCy * h);
+            ctx.scale(mirrorH ? -curZoom : curZoom, curZoom);
+            ctx.translate(-curCx * w, -curCy * h);
 
-            // Draw Studio Background Grid
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            // Subtle studio grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
             ctx.lineWidth = 1;
             for (let x = 0; x < w; x += 60) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, h);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
             }
             for (let y = 0; y < h; y += 60) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(w, y);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
             }
 
-            // Draw Simulated Human Subject
-            const pxX = targetHeadX * w;
-            const pxY = targetHeadY * h;
-            const headR = (baseFaceHeight * h * 0.45);
+            // Simulated subject
+            const pxX = targetX * w;
+            const pxY = targetY * h;
+            const headR = baseFaceH * h * 0.45;
 
-            // Shoulders & Torso
-            ctx.fillStyle = '#222836';
+            // Torso & shoulders
+            ctx.fillStyle = '#1e222e';
             ctx.beginPath();
-            ctx.moveTo(pxX - headR * 2.5, pxY + headR * 2.8);
-            ctx.quadraticCurveTo(pxX, pxY + headR * 0.9, pxX + headR * 2.5, pxY + headR * 2.8);
+            ctx.moveTo(pxX - headR * 2.6, pxY + headR * 2.8);
+            ctx.quadraticCurveTo(pxX, pxY + headR * 0.9, pxX + headR * 2.6, pxY + headR * 2.8);
             ctx.lineTo(pxX + headR * 2.8, h * 1.5);
             ctx.lineTo(pxX - headR * 2.8, h * 1.5);
             ctx.closePath();
@@ -713,18 +737,11 @@
 
             // Head silhouette
             const skinGrad = ctx.createRadialGradient(pxX, pxY - headR * 0.2, headR * 0.2, pxX, pxY, headR);
-            skinGrad.addColorStop(0, '#f1d5c2');
-            skinGrad.addColorStop(1, '#cca58d');
+            skinGrad.addColorStop(0, '#f0d3c0');
+            skinGrad.addColorStop(1, '#c59d85');
             ctx.fillStyle = skinGrad;
             ctx.beginPath();
             ctx.ellipse(pxX, pxY, headR * 0.78, headR, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Eyes
-            ctx.fillStyle = '#1e2430';
-            ctx.beginPath();
-            ctx.arc(pxX - headR * 0.28, pxY - headR * 0.12, headR * 0.08, 0, Math.PI * 2);
-            ctx.arc(pxX + headR * 0.28, pxY - headR * 0.12, headR * 0.08, 0, Math.PI * 2);
             ctx.fill();
 
             // Hair
@@ -733,107 +750,75 @@
             ctx.arc(pxX, pxY - headR * 0.45, headR * 0.82, Math.PI, Math.PI * 2);
             ctx.fill();
 
-            // Draw Pro Broadcast Reticle Brackets
+            // Technical Center Stage Reticle
             if (centerStage) {
-                const boxW = baseFaceWidth * w;
-                const boxH = baseFaceHeight * h;
+                const boxW = baseFaceW * w;
+                const boxH = baseFaceH * h;
                 const bX = pxX - boxW / 2;
                 const bY = pxY - boxH / 2;
-                const corner = Math.min(20, boxW * 0.25);
+                const corner = Math.min(18, boxW * 0.25);
 
-                ctx.strokeStyle = '#ff6600'; // Studio Broadcast Orange
-                ctx.lineWidth = 2.2;
+                ctx.strokeStyle = '#ff6600';
+                ctx.lineWidth = 1.8;
 
-                // Top-left
-                ctx.beginPath();
-                ctx.moveTo(bX, bY + corner);
-                ctx.lineTo(bX, bY);
-                ctx.lineTo(bX + corner, bY);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(bX, bY + corner); ctx.lineTo(bX, bY); ctx.lineTo(bX + corner, bY); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(bX + boxW - corner, bY); ctx.lineTo(bX + boxW, bY); ctx.lineTo(bX + boxW, bY + corner); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(bX, bY + boxH - corner); ctx.lineTo(bX, bY + boxH); ctx.lineTo(bX + corner, bY + boxH); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(bX + boxW - corner, bY + boxH); ctx.lineTo(bX + boxW, bY + boxH); ctx.lineTo(bX + boxW, bY + boxH - corner); ctx.stroke();
 
-                // Top-right
-                ctx.beginPath();
-                ctx.moveTo(bX + boxW - corner, bY);
-                ctx.lineTo(bX + boxW, bY);
-                ctx.lineTo(bX + boxW, bY + corner);
-                ctx.stroke();
-
-                // Bottom-left
-                ctx.beginPath();
-                ctx.moveTo(bX, bY + boxH - corner);
-                ctx.lineTo(bX, bY + boxH);
-                ctx.lineTo(bX + corner, bY + boxH);
-                ctx.stroke();
-
-                // Bottom-right
-                ctx.beginPath();
-                ctx.moveTo(bX + boxW - corner, bY + boxH);
-                ctx.lineTo(bX + boxW, bY + boxH);
-                ctx.lineTo(bX + boxW, bY + boxH - corner);
-                ctx.stroke();
-
-                // Telemetry Tag above Reticle
-                ctx.fillStyle = 'rgba(14, 16, 22, 0.9)';
-                ctx.fillRect(bX, bY - 24, 210, 20);
+                // Telemetry tag above
+                ctx.fillStyle = 'rgba(12, 14, 18, 0.9)';
+                ctx.fillRect(bX, bY - 22, 195, 18);
                 ctx.strokeStyle = '#ff6600';
                 ctx.lineWidth = 1;
-                ctx.strokeRect(bX, bY - 24, 210, 20);
+                ctx.strokeRect(bX, bY - 22, 195, 18);
 
                 ctx.fillStyle = '#ff6600';
-                ctx.font = 'bold 11px JetBrains Mono, monospace';
-                ctx.fillText(`[TGT 01] DIST: ${subjectDistance.toFixed(2)}m | ${currentZoom.toFixed(1)}×`, bX + 6, bY - 10);
+                ctx.font = 'bold 10px JetBrains Mono, monospace';
+                ctx.fillText(`[TGT 01] DIST: ${subjectDistance.toFixed(2)}m | ${curZoom.toFixed(1)}×`, bX + 5, bY - 9);
             }
 
             ctx.restore();
 
-            // ----------------------------------------------------------------
-            // OVERLAY BROADCAST HUD (STATIONARY ON SCREEN)
-            // ----------------------------------------------------------------
-            // 1. Top-Left Program Tally Tag
-            ctx.fillStyle = 'rgba(14, 16, 22, 0.85)';
-            ctx.fillRect(16, 16, 220, 26);
+            // Overlaid Technical HUD
+            ctx.fillStyle = 'rgba(12, 14, 18, 0.85)';
+            ctx.fillRect(14, 14, 210, 24);
             ctx.strokeStyle = '#ef4444';
-            ctx.lineWidth = 1.2;
-            ctx.strokeRect(16, 16, 220, 26);
+            ctx.lineWidth = 1;
+            ctx.strokeRect(14, 14, 210, 24);
 
             ctx.fillStyle = '#ef4444';
             ctx.beginPath();
-            ctx.arc(28, 29, 4.5, 0, Math.PI * 2);
+            ctx.arc(24, 26, 4, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 11px JetBrains Mono, monospace';
-            ctx.fillText(`ON AIR | PGM : ${activeCam.name}`, 38, 33);
+            ctx.font = 'bold 10.5px JetBrains Mono, monospace';
+            ctx.fillText(`ON AIR | PGM : ${cam.name}`, 34, 30);
 
-            // 2. Safe Action / Title Guides
-            if (showSafeZones) {
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+            // Safe Action / Title Guides
+            if (showGuides) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
                 ctx.lineWidth = 1;
                 ctx.setLineDash([4, 4]);
-
-                // Action Safe (90%)
                 ctx.strokeRect(w * 0.05, h * 0.05, w * 0.9, h * 0.9);
-                // Title Safe (80%)
                 ctx.strokeRect(w * 0.1, h * 0.1, w * 0.8, h * 0.8);
+                ctx.setLineDash([]);
 
-                ctx.setLineDash([]); // Reset
-                // Center Crosshair
                 ctx.beginPath();
-                ctx.moveTo(w / 2 - 12, h / 2);
-                ctx.lineTo(w / 2 + 12, h / 2);
-                ctx.moveTo(w / 2, h / 2 - 12);
-                ctx.lineTo(w / 2, h / 2 + 12);
+                ctx.moveTo(w / 2 - 10, h / 2); ctx.lineTo(w / 2 + 10, h / 2);
+                ctx.moveTo(w / 2, h / 2 - 10); ctx.lineTo(w / 2, h / 2 + 10);
                 ctx.stroke();
             }
 
-            // 3. Audio VU Meter on Left Edge
-            const vuX = 16;
-            const vuY = h - 140;
-            const vuW = 12;
-            const vuH = 110;
-            ctx.fillStyle = 'rgba(10, 12, 16, 0.85)';
+            // Audio Level VU Meter
+            const vuX = 14;
+            const vuY = h - 130;
+            const vuW = 10;
+            const vuH = 100;
+            ctx.fillStyle = 'rgba(10, 11, 15, 0.85)';
             ctx.fillRect(vuX, vuY, vuW, vuH);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
             ctx.lineWidth = 1;
             ctx.strokeRect(vuX, vuY, vuW, vuH);
 
@@ -843,19 +828,18 @@
                 const frac = s / totalSegs;
                 const segColor = frac > 0.85 ? '#ef4444' : (frac > 0.65 ? '#eab308' : '#22c55e');
                 const segActive = (1.0 - frac) <= audioLevel;
-                ctx.fillStyle = segActive ? segColor : '#1e2430';
-                ctx.fillRect(vuX + 2, vuY + vuH - 8 - (s * 7), 8, 5);
+                ctx.fillStyle = segActive ? segColor : '#1e202a';
+                ctx.fillRect(vuX + 1.5, vuY + vuH - 7 - (s * 6.5), 7, 4.5);
             }
 
-            requestAnimationFrame(renderLoop);
+            requestAnimationFrame(render);
         }
 
-        // Clamp helper
         Number.prototype.clamp = function(min, max) {
             return Math.min(Math.max(this, min), max);
         };
 
-        renderLoop();
+        render();
     </script>
 </body>
 </html>

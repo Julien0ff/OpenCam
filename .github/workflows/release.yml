@@ -1,0 +1,179 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag Name (e.g. v0.1.0)'
+        required: false
+        default: 'v0.1.0-alpha'
+
+permissions:
+  contents: write
+
+jobs:
+  build-desktop-linux:
+    name: Build Desktop (Linux x86_64)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libv4l-dev libasound2-dev libudev-dev
+
+      - name: Build Release Binary
+        run: cargo build --release --package app-desktop --target x86_64-unknown-linux-gnu
+
+      - name: Package Artifact
+        run: |
+          mkdir -p dist/opencam-linux-x86_64
+          cp target/x86_64-unknown-linux-gnu/release/app-desktop dist/opencam-linux-x86_64/opencam-studio
+          cp README.md dist/opencam-linux-x86_64/
+          cd dist
+          tar -czvf ../opencam-desktop-linux-x86_64.tar.gz opencam-linux-x86_64
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencam-desktop-linux-x86_64
+          path: opencam-desktop-linux-x86_64.tar.gz
+
+  build-desktop-windows:
+    name: Build Desktop (Windows x86_64)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build Release Binary
+        run: cargo build --release --package app-desktop --target x86_64-pc-windows-msvc
+
+      - name: Package Artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist/opencam-windows-x86_64
+          Copy-Item target/x86_64-pc-windows-msvc/release/app-desktop.exe dist/opencam-windows-x86_64/opencam-studio.exe
+          Copy-Item README.md dist/opencam-windows-x86_64/
+          Compress-Archive -Path dist/opencam-windows-x86_64/* -DestinationPath opencam-desktop-windows-x86_64.zip
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencam-desktop-windows-x86_64
+          path: opencam-desktop-windows-x86_64.zip
+
+  build-mobile-android:
+    name: Build Mobile (Android ARM64)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r25c
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android, armv7-linux-androideabi
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+
+      - name: Build Native Android Libraries (.so)
+        run: |
+          mkdir -p crates/app-mobile/android/app/src/main/jniLibs/arm64-v8a
+          cargo ndk -t arm64-v8a -o crates/app-mobile/android/app/src/main/jniLibs build --release --package app-mobile --lib
+
+      - name: Package Standalone Android Archive
+        run: |
+          cd crates/app-mobile/android
+          zip -r ../../../opencam-mobile-android-arm64.zip app/src/main/jniLibs/ AndroidManifest.xml
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencam-mobile-android-arm64
+          path: opencam-mobile-android-arm64.zip
+
+  create-github-release:
+    name: Create GitHub Release
+    needs: [build-desktop-linux, build-desktop-windows, build-mobile-android]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Compute SHA-256 Checksums
+        run: |
+          cd release-assets
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Determine Tag
+        id: tag_info
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag_info.outputs.TAG }}
+          name: "OpenCam ${{ steps.tag_info.outputs.TAG }}"
+          body: |
+            ## OpenCam Release ${{ steps.tag_info.outputs.TAG }}
+
+            Suite webcam virtuelle 100% Rust multiplateforme à ultra-faible latence (< 20ms LAN).
+
+            ### Nouveautés & Correctifs
+            - **Régie Broadcast Multi-Cam :** Commutation instantanée 1-clic avec bus Tally (Program / Preview).
+            - **Center Stage IA :** Suivi dynamique du visage avec auto-zoom proportionnel à la distance du sujet.
+            - **Sortie Système :** Injection directe dans `/dev/video10` (Linux v4l2loopback) et Windows Media Foundation.
+            - **Réseau :** Découverte mDNS automatique et transport vidéo UDP avec réassembleur drop-on-late.
+
+            ### Fichiers de Release
+            - Linux x86_64 : `opencam-desktop-linux-x86_64.tar.gz`
+            - Windows x86_64 : `opencam-desktop-windows-x86_64.zip`
+            - Android ARM64 : `opencam-mobile-android-arm64.zip`
+            - Empreintes cryptographiques : `SHA256SUMS.txt`
+          files: release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
