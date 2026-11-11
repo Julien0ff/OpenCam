@@ -1,5 +1,6 @@
 use crate::types::{
-    CameraCapabilities, DeviceInfo, Orientation, StreamConfig, StreamStats,
+    CameraCapabilities, DeviceInfo, FaceMetrics, FaceTrackingConfig, Orientation, StreamConfig,
+    StreamStats,
 };
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +21,9 @@ pub enum ControlCommand {
 
     /// Toggle hardware torch/flash on the mobile device
     SetTorch { enabled: bool },
+
+    /// Center Stage / Head & Face Tracking with auto-zoom based on distance
+    SetFaceTracking(FaceTrackingConfig),
 
     /// Configure active streaming parameters (resolution, fps, codec, target UDP port)
     ConfigureStream(StreamConfig),
@@ -62,6 +66,9 @@ pub enum ControlResponse {
     /// Real-time streaming and device telemetry update
     StatusUpdate(StreamStats),
 
+    /// Face tracking detection and distance telemetry
+    FaceTrackingTelemetry(FaceMetrics),
+
     /// Pong reply with original ping timestamp and receive timestamp
     Pong {
         ping_timestamp_ms: u64,
@@ -71,3 +78,4 @@ pub enum ControlResponse {
     /// Critical error on mobile side (e.g. camera disconnected or overheated)
     Error { message: String },
 }
+

@@ -19,3 +19,4 @@ ndk-sys = "0.6"
 [target.'cfg(target_os = "ios")'.dependencies]
 # iOS AVFoundation bindings
 objc2 = "0.5"
+

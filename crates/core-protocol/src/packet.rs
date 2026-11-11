@@ -7,7 +7,7 @@ pub const MAGIC_CONTROL: [u8; 4] = [0x4F, 0x43, 0x4C, 0x43]; // "OCLC"
 pub const PROTOCOL_VERSION: u32 = 1;
 pub const DEFAULT_CONTROL_PORT: u16 = 52520;
 pub const DEFAULT_VIDEO_PORT: u16 = 52521;
-pub const MDNS_SERVICE_TYPE: &str = "_opencamlink._tcp.local.";
+pub const MDNS_SERVICE_TYPE: &str = "_opencam._tcp.local.";
 pub const MAX_UDP_PAYLOAD_SIZE: usize = 1400;
 pub const HEADER_SIZE: usize = 32;
 

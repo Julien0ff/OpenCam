@@ -1,13 +1,16 @@
 //! Dynamic real-time frame generator for camera simulation and test patterns.
-//! Generates real, live 30/60 FPS frames with timestamps, moving radar elements,
-//! and live applied zoom/mirror/rotation/torch transformations.
+//! Generates real, live 30/60 FPS frames with timestamps, human subject simulation,
+//! face tracking with distance-based auto-framing, and applied video adjustments.
 
-use core_protocol::Orientation;
+use crate::face_tracking::HeadTracker;
+use core_protocol::{FaceMetrics, FaceTrackingConfig, Orientation};
 use std::time::Instant;
 
 pub struct DynamicFrameGenerator {
     start_time: Instant,
+    last_frame_instant: Instant,
     frame_counter: u64,
+    pub tracker: HeadTracker,
 }
 
 impl Default for DynamicFrameGenerator {
@@ -20,8 +23,20 @@ impl DynamicFrameGenerator {
     pub fn new() -> Self {
         Self {
             start_time: Instant::now(),
+            last_frame_instant: Instant::now(),
             frame_counter: 0,
+            tracker: HeadTracker::default(),
         }
+    }
+
+    /// Sets face tracking and auto-framing configuration.
+    pub fn set_face_tracking(&mut self, config: FaceTrackingConfig) {
+        self.tracker.config = config;
+    }
+
+    /// Queries latest face tracking metrics.
+    pub fn face_metrics(&self) -> FaceMetrics {
+        self.tracker.latest_metrics
     }
 
     /// Generates a live RGBA frame with animated elements and applied video adjustments.
@@ -29,7 +44,7 @@ impl DynamicFrameGenerator {
         &mut self,
         width: u32,
         height: u32,
-        zoom: f32,
+        manual_zoom: f32,
         mirror_h: bool,
         mirror_v: bool,
         orientation: Orientation,
@@ -37,30 +52,41 @@ impl DynamicFrameGenerator {
         camera_name: &str,
     ) -> Vec<u8> {
         self.frame_counter += 1;
+        let now = Instant::now();
+        let dt = now.duration_since(self.last_frame_instant).as_secs_f32().clamp(0.001, 0.1);
+        self.last_frame_instant = now;
+
         let elapsed = self.start_time.elapsed().as_secs_f32();
 
-        // 1. Generate base scene into an RGBA buffer
+        // Simulate natural human movement (subject subtly shifting left/right and moving closer/farther)
+        let simulated_head_x = 0.5 + (elapsed * 0.7).sin() * 0.14;
+        let simulated_head_y = 0.42 + (elapsed * 0.5).cos() * 0.05;
+        // Distance oscillation: face height between 0.18 (far away) and 0.38 (close up)
+        let simulated_face_h = 0.26 + (elapsed * 0.4).sin() * 0.08;
+        let simulated_face_w = simulated_face_h * 0.75;
+
+        // Update head tracker
+        let (crop_cx, crop_cy, auto_zoom) = self.tracker.update(
+            Some((simulated_head_x, simulated_head_y, simulated_face_w, simulated_face_h)),
+            dt,
+        );
+
+        let active_zoom = if self.tracker.config.enabled {
+            auto_zoom
+        } else {
+            manual_zoom
+        };
+
         let w = width as usize;
         let h = height as usize;
         let mut buffer = vec![0u8; w * h * 4];
 
-        // Animated color gradient background
-        let wave_r = ((elapsed * 2.0).sin() * 0.5 + 0.5) * 50.0;
-        let wave_g = ((elapsed * 1.5 + 2.0).cos() * 0.5 + 0.5) * 50.0;
-        let wave_b = ((elapsed * 2.5 + 4.0).sin() * 0.5 + 0.5) * 70.0;
-
         // Torch multiplier
-        let torch_boost = if torch_enabled { 80.0 } else { 0.0 };
+        let torch_boost = if torch_enabled { 60.0 } else { 0.0 };
 
-        // Center coordinates
+        // Draw refined studio background with subtle vignette
         let cx = (w / 2) as f32;
         let cy = (h / 2) as f32;
-        let radius = (w.min(h) as f32) * 0.35 / zoom.clamp(1.0, 10.0);
-
-        // Animated target angle
-        let angle = elapsed * 3.0;
-        let target_x = cx + angle.cos() * radius;
-        let target_y = cy + angle.sin() * radius;
 
         for y in 0..h {
             let dy = y as f32 - cy;
@@ -71,51 +97,21 @@ impl DynamicFrameGenerator {
                 let norm_x = x as f32 / w as f32;
                 let idx = (y * w + x) * 4;
 
-                // Distance to animated target
-                let dist_target = ((x as f32 - target_x).powi(2) + (y as f32 - target_y).powi(2)).sqrt();
-                // Distance to center (for torch lighting cone)
-                let dist_center = (dx.powi(2) + dy.powi(2)).sqrt();
+                // Subtle studio lighting falloff
+                let dist_sq = (norm_x - 0.5).powi(2) + (norm_y - 0.5).powi(2);
+                let vignette = (1.0 - dist_sq * 1.2).clamp(0.2, 1.0);
 
-                // Torch light falloff from center
+                let torch_dist = (dx.powi(2) + dy.powi(2)).sqrt();
                 let torch_light = if torch_enabled {
-                    (torch_boost * (1.0 - (dist_center / (w as f32 * 0.6)).min(1.0))).max(0.0)
+                    (torch_boost * (1.0 - (torch_dist / (w as f32 * 0.65)).min(1.0))).max(0.0)
                 } else {
                     0.0
                 };
 
-                let mut r = (norm_x * 40.0 + wave_r + torch_light) as u8;
-                let mut g = (norm_y * 40.0 + wave_g + torch_light) as u8;
-                let mut b = (60.0 + wave_b + torch_light) as u8;
-
-                // Center crosshair
-                if (dx.abs() < 2.0 && dy.abs() < 40.0) || (dy.abs() < 2.0 && dx.abs() < 40.0) {
-                    r = 255;
-                    g = 255;
-                    b = 255;
-                }
-
-                // Radar circular ring
-                let dist_circle = (dist_center - radius).abs();
-                if dist_circle < 2.5 {
-                    r = 0;
-                    g = 220;
-                    b = 255;
-                }
-
-                // Animated glowing beacon
-                if dist_target < 24.0 {
-                    let pulse = (1.0 - dist_target / 24.0) * 255.0;
-                    r = r.saturating_add(pulse as u8);
-                    g = g.saturating_add((pulse * 0.8) as u8);
-                    b = b.saturating_add(40);
-                }
-
-                // Grid lines every 100 pixels
-                if x % 100 == 0 || y % 100 == 0 {
-                    r = r.saturating_add(25);
-                    g = g.saturating_add(25);
-                    b = b.saturating_add(35);
-                }
+                let base_lum = 22.0 * vignette + torch_light;
+                let r = (base_lum + 3.0) as u8;
+                let g = (base_lum + 4.0) as u8;
+                let b = (base_lum + 8.0) as u8;
 
                 buffer[idx] = r;
                 buffer[idx + 1] = g;
@@ -124,18 +120,144 @@ impl DynamicFrameGenerator {
             }
         }
 
-        // Draw top HUD banner (frame counter, time, camera name)
-        draw_hud_bar(&mut buffer, w, h, camera_name, self.frame_counter, elapsed, zoom, torch_enabled);
+        // Draw simulated subject (head, shoulders, eyes, mouth)
+        let subject_px_x = (simulated_head_x * w as f32) as i32;
+        let subject_px_y = (simulated_head_y * h as f32) as i32;
+        let head_radius = (simulated_face_h * h as f32 * 0.45) as i32;
 
-        // 2. Apply digital zoom if > 1.0
-        let zoomed_buffer = if zoom > 1.01 {
-            apply_zoom(&buffer, w, h, zoom)
+        draw_simulated_portrait(&mut buffer, w, h, subject_px_x, subject_px_y, head_radius);
+
+        // Draw refined Center Stage tracking brackets if active
+        if self.tracker.config.enabled {
+            draw_tracking_brackets(
+                &mut buffer,
+                w,
+                h,
+                (simulated_head_x * w as f32) as i32,
+                (simulated_head_y * h as f32) as i32,
+                (simulated_face_w * w as f32) as i32,
+                (simulated_face_h * h as f32) as i32,
+            );
+        }
+
+        // Top HUD bar
+        draw_hud_bar(&mut buffer, w, h, camera_name, self.frame_counter, elapsed, active_zoom, torch_enabled);
+
+        // 2. Apply digital zoom with dynamic center point (Center Stage cropping)
+        let zoomed_buffer = if active_zoom > 1.01 {
+            apply_dynamic_zoom(&buffer, w, h, active_zoom, crop_cx, crop_cy)
         } else {
             buffer
         };
 
         // 3. Apply mirror & orientation
         apply_transforms(zoomed_buffer, w, h, mirror_h, mirror_v, orientation)
+    }
+}
+
+fn draw_simulated_portrait(
+    buffer: &mut [u8],
+    width: usize,
+    height: usize,
+    head_x: i32,
+    head_y: i32,
+    radius: i32,
+) {
+    let r_sq = radius * radius;
+    let r_neck = radius * 3 / 4;
+
+    for dy in -radius..=(radius * 2) {
+        let py = head_y + dy;
+        if py < 0 || py >= height as i32 {
+            continue;
+        }
+
+        let max_dx = if dy <= radius {
+            let rem = (r_sq - dy * dy).max(0);
+            (rem as f32).sqrt() as i32
+        } else {
+            // Torso / Shoulders widening
+            r_neck + ((dy - radius) * 2)
+        };
+
+        for dx in -max_dx..=max_dx {
+            let px = head_x + dx;
+            if px < 0 || px >= width as i32 {
+                continue;
+            }
+
+            let idx = (py as usize * width + px as usize) * 4;
+
+            if dy > radius {
+                // Shoulders (dark charcoal navy fabric)
+                buffer[idx] = 34;
+                buffer[idx + 1] = 40;
+                buffer[idx + 2] = 52;
+            } else {
+                // Skin tone (warm soft tone)
+                let dist_from_center = ((dx * dx + dy * dy) as f32).sqrt() / radius as f32;
+                let shade = 1.0 - dist_from_center * 0.25;
+
+                let mut r = (215.0 * shade) as u8;
+                let mut g = (175.0 * shade) as u8;
+                let mut b = (150.0 * shade) as u8;
+
+                // Eyes
+                let eye_y = -radius / 6;
+                let eye_dx = radius / 3;
+                if (dy - eye_y).abs() <= 3 && ((dx - eye_dx).abs() <= 4 || (dx + eye_dx).abs() <= 4) {
+                    r = 30;
+                    g = 30;
+                    b = 30;
+                }
+
+                buffer[idx] = r;
+                buffer[idx + 1] = g;
+                buffer[idx + 2] = b;
+            }
+        }
+    }
+}
+
+fn draw_tracking_brackets(
+    buffer: &mut [u8],
+    width: usize,
+    height: usize,
+    cx: i32,
+    cy: i32,
+    box_w: i32,
+    box_h: i32,
+) {
+    let x0 = (cx - box_w / 2 - 8).clamp(0, width as i32 - 1);
+    let x1 = (cx + box_w / 2 + 8).clamp(0, width as i32 - 1);
+    let y0 = (cy - box_h / 2 - 8).clamp(0, height as i32 - 1);
+    let y1 = (cy + box_h / 2 + 8).clamp(0, height as i32 - 1);
+    let corner_len = 16.min(box_w / 4);
+
+    let draw_pixel = |buf: &mut [u8], x: i32, y: i32| {
+        if x >= 0 && x < width as i32 && y >= 0 && y < height as i32 {
+            let idx = (y as usize * width + x as usize) * 4;
+            // Refined Apple-style yellow/gold focus color
+            buf[idx] = 250;
+            buf[idx + 1] = 204;
+            buf[idx + 2] = 21;
+        }
+    };
+
+    // 4 Corner brackets
+    for d in 0..corner_len {
+        // Top-left
+        draw_pixel(buffer, x0 + d, y0);
+        draw_pixel(buffer, x0, y0 + d);
+        // Top-right
+        draw_pixel(buffer, x1 - d, y0);
+        draw_pixel(buffer, x1, y0 + d);
+        // Bottom-left
+        draw_pixel(buffer, x0 + d, y1);
+        draw_pixel(buffer, x0, y1 - d);
+        // Bottom-right
+        draw_pixel(buffer, x1 - d, y1);
+        draw_pixel(buffer, x1, y1 - d);
     }
 }
 
@@ -149,36 +271,44 @@ fn draw_hud_bar(
     _zoom: f32,
     _torch: bool,
 ) {
-    let hud_height = 40.min(height);
+    let hud_height = 32.min(height);
     for y in 0..hud_height {
         for x in 0..width {
             let idx = (y * width + x) * 4;
-            // Dark translucent overlay
-            buffer[idx] = (buffer[idx] as u32 * 40 / 100) as u8;
-            buffer[idx + 1] = (buffer[idx + 1] as u32 * 40 / 100) as u8;
-            buffer[idx + 2] = (buffer[idx + 2] as u32 * 50 / 100) as u8;
+            buffer[idx] = (buffer[idx] as u32 * 30 / 100) as u8;
+            buffer[idx + 1] = (buffer[idx + 1] as u32 * 30 / 100) as u8;
+            buffer[idx + 2] = (buffer[idx + 2] as u32 * 35 / 100) as u8;
 
-            // Live indicator dot (red blinking)
-            if x >= 15 && x <= 27 && y >= 14 && y <= 26 {
-                let is_blink_on = (elapsed * 2.0).fract() < 0.6;
-                if is_blink_on {
-                    buffer[idx] = 255;
-                    buffer[idx + 1] = 40;
-                    buffer[idx + 2] = 40;
-                }
+            // Live indicator dot (smooth pulsing green/emerald)
+            if x >= 14 && x <= 22 && y >= 11 && y <= 19 {
+                let pulse = ((elapsed * 3.0).sin() * 0.4 + 0.6) * 255.0;
+                buffer[idx] = 16;
+                buffer[idx + 1] = pulse as u8;
+                buffer[idx + 2] = 129;
             }
         }
     }
 }
 
-fn apply_zoom(src: &[u8], width: usize, height: usize, zoom: f32) -> Vec<u8> {
+fn apply_dynamic_zoom(
+    src: &[u8],
+    width: usize,
+    height: usize,
+    zoom: f32,
+    center_x: f32,
+    center_y: f32,
+) -> Vec<u8> {
     let z = zoom.clamp(1.0, 10.0);
     let mut out = vec![0u8; width * height * 4];
 
-    let crop_w = (width as f32 / z) as usize;
-    let crop_h = (height as f32 / z) as usize;
-    let offset_x = (width - crop_w) / 2;
-    let offset_y = (height - crop_h) / 2;
+    let crop_w = ((width as f32) / z) as usize;
+    let crop_h = ((height as f32) / z) as usize;
+
+    let target_offset_x = (center_x * width as f32) as isize - (crop_w as isize / 2);
+    let target_offset_y = (center_y * height as f32) as isize - (crop_h as isize / 2);
+
+    let offset_x = target_offset_x.clamp(0, (width - crop_w) as isize) as usize;
+    let offset_y = target_offset_y.clamp(0, (height - crop_h) as isize) as usize;
 
     for y in 0..height {
         let src_y = offset_y + (y * crop_h) / height;
@@ -213,7 +343,6 @@ fn apply_transforms(
             let (tx, ty) = match orientation {
                 Orientation::Deg0 => (x, y),
                 Orientation::Deg180 => (width - 1 - x, height - 1 - y),
-                // 90 and 270 degree rotation when preserving aspect ratio
                 Orientation::Deg90 => (width - 1 - (y * width / height), (x * height / width)),
                 Orientation::Deg270 => (y * width / height, height - 1 - (x * height / width)),
             };

@@ -68,3 +68,4 @@ impl VirtualCameraSink for WindowsMfVirtualCameraSink {
         "OpenCamLink Virtual Camera (Windows MF)"
     }
 }
+

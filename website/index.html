@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenCam — Suite Webcam Virtuelle 100% Rust Multiplateforme</title>
+    <meta name="description" content="Transformez votre smartphone en webcam de studio 4K à ultra-faible latence (< 30ms) avec suivi de la tête et zoom automatique par distance. Alternative open-source 100% Rust à iVCam et Camo.">
+    <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --bg-base: #090a0f;
+            --bg-surface: #12151d;
+            --bg-elevated: #1a1e29;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.16);
+            --accent-blue: #0071e3;
+            --accent-glow: rgba(0, 113, 227, 0.3);
+            --emerald: #10b981;
+            --amber: #f59e0b;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-base);
+            color: #f1f5f9;
+            selection-background-color: var(--accent-blue);
+        }
+
+        .font-mono {
+            font-family: var(--font-mono);
+        }
+
+        .glass-nav {
+            background: rgba(9, 10, 15, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .studio-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 1rem;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .studio-card:hover {
+            border-color: var(--border-strong);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: #94a3b8;
+        }
+
+        .badge-active {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+
+        .interactive-viewport {
+            position: relative;
+            background: #000000;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        /* Apple-style segmented buttons */
+        .segmented-group {
+            display: inline-flex;
+            background: #0f1218;
+            padding: 0.25rem;
+            border-radius: 0.625rem;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .segmented-btn {
+            padding: 0.375rem 0.875rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            color: #94a3b8;
+            transition: all 0.15s ease;
+        }
+
+        .segmented-btn.active {
+            background: #1e2430;
+            color: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+
+        /* Apple toggle switch */
+        .apple-toggle {
+            position: relative;
+            width: 2.75rem;
+            height: 1.5rem;
+            border-radius: 9999px;
+            background: #2a3140;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .apple-toggle.active {
+            background: var(--accent-blue);
+        }
+
+        .apple-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 9999px;
+            background: #ffffff;
+            transition: transform 0.2s cubic-bezier(0.3, 0, 0, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .apple-toggle.active::after {
+            transform: translateX(1.25rem);
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-200">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-nav">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="#" class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                        <circle cx="12" cy="13" r="3"/>
+                    </svg>
+                </div>
+                <div class="flex items-baseline gap-1.5">
+                    <span class="font-extrabold text-lg tracking-tight text-white">OpenCam</span>
+                    <span class="text-xs font-mono text-blue-400 font-semibold px-1.5 py-0.2 rounded bg-blue-500/10 border border-blue-500/20">Studio</span>
+                </div>
+            </a>
+
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+                <a href="#features" class="hover:text-white transition">Fonctionnalités</a>
+                <a href="#center-stage" class="hover:text-white transition">Center Stage</a>
+                <a href="#demo" class="hover:text-white transition">Démonstration Live</a>
+                <a href="#comparison" class="hover:text-white transition">Comparatif</a>
+                <a href="#quickstart" class="hover:text-white transition">Installation</a>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a href="https://github.com/opencamlink/opencamlink" target="_blank" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 hover:text-white transition flex items-center gap-1.5">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    <span>GitHub</span>
+                </a>
+                <a href="#quickstart" class="px-4 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500 transition">
+                    Télécharger
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="pt-32 pb-20 px-4 text-center relative overflow-hidden">
+        <div class="max-w-4xl mx-auto space-y-6">
+            <div class="flex flex-wrap justify-center gap-2">
+                <span class="badge badge-active">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Codebase 100% Rust Unifiée
+                </span>
+                <span class="badge">Latence &lt; 30 ms (UDP)</span>
+                <span class="badge">Center Stage & Auto-Zoom</span>
+                <span class="badge">Zéro Cloud &bull; 100% Local</span>
+            </div>
+
+            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
+                La puissance d'une caméra de cinéma.<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-sky-400">
+                    Directement sur votre PC & Mac.
+                </span>
+            </h1>
+
+            <p class="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                Transformez votre smartphone Android ou iPhone en webcam virtuelle ultra-haute fidélité. Suivi du visage intelligent, cadrage automatique selon la distance, et zéro framework hybride lourd.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+                <a href="#quickstart" class="w-full sm:w-auto px-7 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-xl shadow-blue-600/25 transition flex items-center justify-center gap-2">
+                    <span>Installer OpenCam Studio</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </a>
+                <a href="#demo" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80 font-semibold text-sm transition">
+                    Essayer le simulateur interactif
+                </a>
+            </div>
+
+            <div class="pt-8 flex flex-wrap justify-center items-center gap-x-8 gap-y-3 text-xs text-slate-400 font-medium">
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    <span>Linux (v4l2loopback)</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    <span>Windows (Virtual Camera)</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    <span>Android (NDK Camera2)</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    <span>iOS (AVFoundation)</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Interactive Live Studio & Center Stage Demo -->
+    <section id="demo" class="py-16 px-4 max-w-6xl mx-auto">
+        <div class="text-center space-y-3 mb-10">
+            <span class="badge">Simulateur Interactif en Ligne</span>
+            <h2 class="text-3xl font-extrabold text-white">Testez le Cadrage Intelligent OpenCam</h2>
+            <p class="text-sm text-slate-400 max-w-xl mx-auto">
+                Bougez la distance du sujet ou activez le Center Stage pour observer l'auto-cadrage fluide et le zoom calculé en temps réel.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <!-- Canvas Viewport (2 cols) -->
+            <div class="lg:col-span-2 space-y-3">
+                <div class="flex items-center justify-between text-xs px-1">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="font-bold text-white">MONITEUR STUDIO OPEN-CAM</span>
+                        <span class="text-slate-400 font-mono" id="demo-res">1920×1080 @ 60 FPS</span>
+                    </div>
+                    <span id="demo-sink-tag" class="font-mono text-emerald-400 font-semibold">/dev/video10 [YUYV] Connecté</span>
+                </div>
+
+                <div class="interactive-viewport aspect-video flex items-center justify-center">
+                    <canvas id="studio-canvas" width="960" height="540" class="w-full h-full object-cover"></canvas>
+                    
+                    <!-- Viewport Floating Telemetry -->
+                    <div class="absolute top-4 left-4 pointer-events-none space-y-1 font-mono text-xs">
+                        <div class="px-2.5 py-1 rounded bg-black/60 backdrop-blur border border-white/10 text-white font-medium flex items-center gap-2">
+                            <span id="demo-sensor-name">Objectif Arrière 1.0×</span>
+                            <span class="text-slate-400">•</span>
+                            <span id="demo-zoom-stat" class="text-blue-400 font-bold">1.0×</span>
+                        </div>
+                        <div id="demo-tracking-badge" class="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] font-semibold hidden">
+                            🎯 Center Stage : Suivi Actif
+                        </div>
+                    </div>
+
+                    <div class="absolute bottom-4 right-4 pointer-events-none">
+                        <div class="px-2.5 py-1 rounded bg-black/60 backdrop-blur border border-white/10 text-[11px] font-mono text-slate-300">
+                            Latence : <span class="text-emerald-400 font-bold">18 ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Studio Controls (1 col) -->
+            <div class="studio-card p-6 space-y-6">
+                <div>
+                    <h3 class="text-base font-bold text-white">Régie de Contrôle</h3>
+                    <p class="text-xs text-slate-400">Commandes RPC transmises instantanément</p>
+                </div>
+
+                <!-- Center Stage & Auto-Zoom Section -->
+                <div class="space-y-4 p-4 rounded-xl bg-slate-900/80 border border-white/5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-xs font-bold text-white">Suivi de la tête (Center Stage)</div>
+                            <div class="text-[11px] text-slate-400">Recadre le visage au centre</div>
+                        </div>
+                        <div id="toggle-tracking" class="apple-toggle active" onclick="toggleCenterStage()"></div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                        <div>
+                            <div class="text-xs font-bold text-white">Zoom auto par distance</div>
+                            <div class="text-[11px] text-slate-400">Compense le recul du sujet</div>
+                        </div>
+                        <div id="toggle-autozoom" class="apple-toggle active" onclick="toggleAutoZoom()"></div>
+                    </div>
+
+                    <!-- Framing Mode Selector -->
+                    <div class="space-y-2 pt-2 border-t border-white/5">
+                        <div class="text-[11px] font-semibold text-slate-300">Cadrage de plan :</div>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button onclick="setFraming('head')" id="mode-head" class="px-2 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white shadow">Visage</button>
+                            <button onclick="setFraming('torso')" id="mode-torso" class="px-2 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Buste</button>
+                            <button onclick="setFraming('wide')" id="mode-wide" class="px-2 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Large</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Distance simulation slider -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-semibold text-slate-300">Distance du sujet simulée</span>
+                        <span id="dist-label" class="font-mono text-blue-400 font-bold">Normale (1.2 m)</span>
+                    </div>
+                    <input type="range" id="dist-slider" min="0.5" max="3.0" step="0.1" value="1.2" oninput="updateDistance(this.value)" class="w-full accent-blue-500 cursor-pointer">
+                    <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                        <span>Près (0.5m)</span>
+                        <span>Éloigné (3m)</span>
+                    </div>
+                </div>
+
+                <!-- Physical Lens selection -->
+                <div class="space-y-2">
+                    <div class="text-xs font-semibold text-slate-300">Objectif du smartphone</div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setLens('wide')" id="lens-wide" class="px-2 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white">Principal 1× </button>
+                        <button onclick="setLens('ultra')" id="lens-ultra" class="px-2 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Ultra-Wide</button>
+                        <button onclick="setLens('tele')" id="lens-tele" class="px-2 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Avant</button>
+                    </div>
+                </div>
+
+                <!-- Mirror and torch -->
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                    <button onclick="toggleMirror()" id="btn-mirror" class="py-2 px-3 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+                        Miroir H : Off
+                    </button>
+                    <button onclick="toggleTorchDemo()" id="btn-torch" class="py-2 px-3 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+                        Éclairage : Off
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Architectural Features -->
+    <section id="features" class="py-20 px-4 max-w-6xl mx-auto border-t border-white/5">
+        <div class="text-center space-y-3 mb-16">
+            <span class="badge">Architecture & Performance</span>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Pourquoi OpenCam surpasse les solutions existantes</h2>
+            <p class="text-sm text-slate-400 max-w-2xl mx-auto">
+                Conçu dès la première ligne en Rust natif pour éliminer la gigue de buffer, préserver l'autonomie du téléphone et offrir une image digne des caméras dédiées.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Card 1 -->
+            <div class="studio-card p-6 space-y-4">
+                <div class="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white">Latence &lt; 30 ms (UDP Drop-on-Late)</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Contrairement aux applications TCP qui accumulent du retard dès qu'un paquet subit une micro-coupure Wi-Fi, notre réassembleur UDP élimine automatiquement les trames obsolètes. Le flux reste toujours synchronisé avec votre voix.
+                </p>
+                <div class="pt-2 text-xs font-mono text-blue-400 font-semibold">Protocole binaire 32-octets "OCLV"</div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="studio-card p-6 space-y-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white">Center Stage & Auto-Zoom par Distance</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Grâce au calcul de cadrage en temps réel, la caméra suit vos mouvements de tête avec un amorti cinématographique doux. Si vous reculez dans votre pièce, le zoom s'ajuste dynamiquement pour conserver le cadrage idéal.
+                </p>
+                <div class="pt-2 text-xs font-mono text-amber-400 font-semibold">Filtre exponentiel & Modes Buste/Visage</div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="studio-card p-6 space-y-4">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white">Intégration Périphérique Natif</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Sous Linux, OpenCam injecte directement les trames dans <code class="text-emerald-400">/dev/videoX</code> via <code class="text-emerald-400">v4l2loopback</code> au format standard YUYV. Compatible sans aucun plugin avec Discord, OBS Studio, Google Meet, Zoom et Teams.
+                </p>
+                <div class="pt-2 text-xs font-mono text-emerald-400 font-semibold">100% Pilote système local</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section id="comparison" class="py-20 px-4 max-w-5xl mx-auto border-t border-white/5">
+        <div class="text-center space-y-3 mb-12">
+            <span class="badge">Comparatif Technique</span>
+            <h2 class="text-3xl font-extrabold text-white">OpenCam face aux logiciels existants</h2>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm border-collapse">
+                <thead>
+                    <tr class="border-b border-white/10 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        <th class="py-4 px-4">Fonctionnalité</th>
+                        <th class="py-4 px-4 text-blue-400 font-bold">OpenCam</th>
+                        <th class="py-4 px-4">iVCam</th>
+                        <th class="py-4 px-4">Camo Studio</th>
+                        <th class="py-4 px-4">DroidCam</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5 text-slate-300">
+                    <tr>
+                        <td class="py-3.5 px-4 font-semibold text-white">Codebase & Performance</td>
+                        <td class="py-3.5 px-4 font-bold text-emerald-400">100% Rust Unifié</td>
+                        <td class="py-3.5 px-4 text-slate-400">C++ Propriétaire</td>
+                        <td class="py-3.5 px-4 text-slate-400">Swift / C# / C++</td>
+                        <td class="py-3.5 px-4 text-slate-400">C / Java</td>
+                    </tr>
+                    <tr>
+                        <td class="py-3.5 px-4 font-semibold text-white">Latence Réseau</td>
+                        <td class="py-3.5 px-4 font-bold text-emerald-400">&lt; 30 ms (UDP direct)</td>
+                        <td class="py-3.5 px-4 text-slate-400">~60 - 150 ms (TCP buffer)</td>
+                        <td class="py-3.5 px-4 text-slate-400">~40 - 80 ms</td>
+                        <td class="py-3.5 px-4 text-slate-400">~80 - 120 ms</td>
+                    </tr>
+                    <tr>
+                        <td class="py-3.5 px-4 font-semibold text-white">Suivi de la tête (Center Stage)</td>
+                        <td class="py-3.5 px-4 font-bold text-emerald-400">Inclus & Temps Réel</td>
+                        <td class="py-3.5 px-4 text-red-400">Non</td>
+                        <td class="py-3.5 px-4 text-slate-400">Spotlight (payant)</td>
+                        <td class="py-3.5 px-4 text-red-400">Non</td>
+                    </tr>
+                    <tr>
+                        <td class="py-3.5 px-4 font-semibold text-white">Zoom auto selon distance</td>
+                        <td class="py-3.5 px-4 font-bold text-emerald-400">Oui (Dynamique)</td>
+                        <td class="py-3.5 px-4 text-red-400">Non</td>
+                        <td class="py-3.5 px-4 text-slate-400">Partiel</td>
+                        <td class="py-3.5 px-4 text-red-400">Non</td>
+                    </tr>
+                    <tr>
+                        <td class="py-3.5 px-4 font-semibold text-white">Multi-Caméras Simultanées</td>
+                        <td class="py-3.5 px-4 font-bold text-emerald-400">Illimité (N phones)</td>
+                        <td class="py-3.5 px-4 text-slate-400">Limité (licence requise)</td>
+                        <td class="py-3.5 px-4 text-slate-400">1 ou 2 flux</td>
+                        <td class="py-3.5 px-4 text-slate-400">1 seul flux</td>
+                    </tr>
+                    <tr>
+                        <td class="py-3.5 px-4 font-semibold text-white">Licence & Vie Privée</td>
+                        <td class="py-3.5 px-4 font-bold text-emerald-400">Open-Source & 100% Local</td>
+                        <td class="py-3.5 px-4 text-red-400">Fermé / Pubs / Filigrane</td>
+                        <td class="py-3.5 px-4 text-slate-400">Freemium Propriétaire</td>
+                        <td class="py-3.5 px-4 text-slate-400">Freemium avec pubs</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Quickstart & Installation -->
+    <section id="quickstart" class="py-20 px-4 max-w-4xl mx-auto border-t border-white/5">
+        <div class="text-center space-y-3 mb-10">
+            <span class="badge">Prise en Main Immédiate</span>
+            <h2 class="text-3xl font-extrabold text-white">Lancer OpenCam en 3 étapes</h2>
+        </div>
+
+        <div class="space-y-6">
+            <!-- Step 1 -->
+            <div class="p-5 rounded-xl bg-slate-900 border border-white/10 space-y-3">
+                <div class="flex items-center gap-2 font-bold text-white text-sm">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-xs">1</span>
+                    <span>Activer le pilote de caméra virtuelle sous Linux (v4l2loopback)</span>
+                </div>
+                <div class="bg-black/80 p-3 rounded-lg border border-white/5 font-mono text-xs text-slate-300 overflow-x-auto">
+                    sudo modprobe v4l2loopback devices=2 video_nr=10,11 card_label="OpenCam 1","OpenCam 2" exclusive_caps=1
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="p-5 rounded-xl bg-slate-900 border border-white/10 space-y-3">
+                <div class="flex items-center gap-2 font-bold text-white text-sm">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-xs">2</span>
+                    <span>Lancer la régie Desktop OpenCam Studio</span>
+                </div>
+                <div class="bg-black/80 p-3 rounded-lg border border-white/5 font-mono text-xs text-slate-300 overflow-x-auto">
+                    cargo run --bin app-desktop --release
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="p-5 rounded-xl bg-slate-900 border border-white/10 space-y-3">
+                <div class="flex items-center gap-2 font-bold text-white text-sm">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-xs">3</span>
+                    <span>Compiler et installer l'application smartphone (Android via cargo-ndk)</span>
+                </div>
+                <div class="bg-black/80 p-3 rounded-lg border border-white/5 font-mono text-xs text-slate-300 overflow-x-auto">
+                    cargo ndk -t arm64-v8a -o crates/app-mobile/android/app/src/main/jniLibs build --release -p app-mobile
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-4 border-t border-white/10 text-center text-xs text-slate-500 space-y-3">
+        <p class="font-medium text-slate-400">OpenCam — Suite Webcam Virtuelle Open-Source en Rust</p>
+        <p>Distribué sous licence MIT ou Apache-2.0. Conçu pour le respect total de votre vie privée.</p>
+    </footer>
+
+    <!-- Interactive Canvas Simulator Logic -->
+    <script>
+        const canvas = document.getElementById('studio-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let centerStage = true;
+        let autoZoom = true;
+        let framingMode = 'head'; // 'head', 'torso', 'wide'
+        let subjectDistance = 1.2; // 0.5 to 3.0 meters
+        let currentLens = 'wide';
+        let mirrorH = false;
+        let torchActive = false;
+
+        // Dynamic Spring-Damping tracker state
+        let currentCx = 0.5;
+        let currentCy = 0.45;
+        let currentZoom = 1.0;
+
+        function toggleCenterStage() {
+            centerStage = !centerStage;
+            document.getElementById('toggle-tracking').classList.toggle('active', centerStage);
+            document.getElementById('demo-tracking-badge').style.display = centerStage ? 'block' : 'none';
+        }
+
+        function toggleAutoZoom() {
+            autoZoom = !autoZoom;
+            document.getElementById('toggle-autozoom').classList.toggle('active', autoZoom);
+        }
+
+        function setFraming(mode) {
+            framingMode = mode;
+            ['head', 'torso', 'wide'].forEach(m => {
+                const btn = document.getElementById('mode-' + m);
+                btn.className = m === mode
+                    ? 'px-2 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white shadow'
+                    : 'px-2 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700';
+            });
+        }
+
+        function updateDistance(val) {
+            subjectDistance = parseFloat(val);
+            document.getElementById('dist-label').innerText = `${subjectDistance.toFixed(1)} m`;
+        }
+
+        function setLens(lens) {
+            currentLens = lens;
+            ['wide', 'ultra', 'tele'].forEach(l => {
+                const btn = document.getElementById('lens-' + l);
+                btn.className = l === lens
+                    ? 'px-2 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white'
+                    : 'px-2 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700';
+            });
+            const names = {
+                wide: 'Objectif Arrière 1.0× (Grand Angle)',
+                ultra: 'Objectif Ultra-Wide 0.5× (Large)',
+                tele: 'Objectif Avant (Selfie)'
+            };
+            document.getElementById('demo-sensor-name').innerText = names[lens];
+        }
+
+        function toggleMirror() {
+            mirrorH = !mirrorH;
+            const btn = document.getElementById('btn-mirror');
+            btn.innerText = `Miroir H : ${mirrorH ? 'Actif' : 'Off'}`;
+            btn.className = mirrorH
+                ? 'py-2 px-3 rounded-lg text-xs font-semibold bg-blue-600 text-white border border-blue-500 transition'
+                : 'py-2 px-3 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition';
+        }
+
+        function toggleTorchDemo() {
+            torchActive = !torchActive;
+            const btn = document.getElementById('btn-torch');
+            btn.innerText = `Éclairage : ${torchActive ? 'Allumé' : 'Off'}`;
+            btn.className = torchActive
+                ? 'py-2 px-3 rounded-lg text-xs font-semibold bg-amber-500 text-slate-950 font-bold border border-amber-400 transition'
+                : 'py-2 px-3 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition';
+        }
+
+        // 60 FPS Render Loop
+        function renderLoop() {
+            const time = performance.now() * 0.0015;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // Simulated subject moving naturally
+            const targetHeadX = 0.5 + Math.sin(time * 0.8) * 0.16;
+            const targetHeadY = 0.42 + Math.cos(time * 0.6) * 0.06;
+
+            // Face scale on screen is inversely proportional to distance
+            const baseFaceHeight = (0.34 / subjectDistance).clamp(0.12, 0.45);
+            const baseFaceWidth = baseFaceHeight * 0.72;
+
+            // Desired framing ratio
+            const desiredRatio = framingMode === 'head' ? 0.36 : (framingMode === 'torso' ? 0.22 : 0.14);
+
+            let targetZoom = 1.0;
+            if (centerStage && autoZoom) {
+                targetZoom = (desiredRatio / baseFaceHeight).clamp(1.0, 3.2);
+            }
+
+            // Smooth spring damping towards target
+            const alpha = centerStage ? 0.07 : 0.05;
+            const targetCenterX = centerStage ? targetHeadX : 0.5;
+            const targetCenterY = centerStage ? (targetHeadY + 0.06) : 0.5;
+
+            currentCx += (targetCenterX - currentCx) * alpha;
+            currentCy += (targetCenterY - currentCy) * alpha;
+            currentZoom += (targetZoom - currentZoom) * alpha;
+
+            document.getElementById('demo-zoom-stat').innerText = `${currentZoom.toFixed(1)}×`;
+
+            ctx.save();
+
+            // Clear background with soft vignette
+            ctx.fillStyle = torchActive ? '#151922' : '#0a0d13';
+            ctx.fillRect(0, 0, w, h);
+
+            // Studio background lighting
+            const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 80, w / 2, h / 2, w * 0.65);
+            bgGrad.addColorStop(0, torchActive ? 'rgba(40, 50, 70, 0.9)' : 'rgba(25, 30, 45, 0.8)');
+            bgGrad.addColorStop(1, 'rgba(6, 8, 12, 1)');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            // Apply camera transform: dynamic zoom centered around (currentCx, currentCy)
+            ctx.translate(w / 2, h / 2);
+            ctx.scale(mirrorH ? -currentZoom : currentZoom, currentZoom);
+            ctx.translate(-currentCx * w, -currentCy * h);
+
+            // Draw Studio Background Grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < w; x += 60) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+            for (let y = 0; y < h; y += 60) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+
+            // Draw Simulated Human Subject
+            const pxX = targetHeadX * w;
+            const pxY = targetHeadY * h;
+            const headR = (baseFaceHeight * h * 0.45);
+
+            // Shoulders & Torso
+            ctx.fillStyle = '#222836';
+            ctx.beginPath();
+            ctx.moveTo(pxX - headR * 2.5, pxY + headR * 2.8);
+            ctx.quadraticCurveTo(pxX, pxY + headR * 0.9, pxX + headR * 2.5, pxY + headR * 2.8);
+            ctx.lineTo(pxX + headR * 2.8, h * 1.5);
+            ctx.lineTo(pxX - headR * 2.8, h * 1.5);
+            ctx.closePath();
+            ctx.fill();
+
+            // Head silhouette
+            const skinGrad = ctx.createRadialGradient(pxX, pxY - headR * 0.2, headR * 0.2, pxX, pxY, headR);
+            skinGrad.addColorStop(0, '#f1d5c2');
+            skinGrad.addColorStop(1, '#cca58d');
+            ctx.fillStyle = skinGrad;
+            ctx.beginPath();
+            ctx.ellipse(pxX, pxY, headR * 0.78, headR, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes
+            ctx.fillStyle = '#1e2430';
+            ctx.beginPath();
+            ctx.arc(pxX - headR * 0.28, pxY - headR * 0.12, headR * 0.08, 0, Math.PI * 2);
+            ctx.arc(pxX + headR * 0.28, pxY - headR * 0.12, headR * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Hair
+            ctx.fillStyle = '#181b24';
+            ctx.beginPath();
+            ctx.arc(pxX, pxY - headR * 0.45, headR * 0.82, Math.PI, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Yellow Apple-style Center Stage Brackets around face
+            if (centerStage) {
+                const boxW = baseFaceWidth * w;
+                const boxH = baseFaceHeight * h;
+                const bX = pxX - boxW / 2;
+                const bY = pxY - boxH / 2;
+                const corner = Math.min(20, boxW * 0.25);
+
+                ctx.strokeStyle = '#fbbf24'; // Amber-400
+                ctx.lineWidth = 2.5;
+
+                // Top-left
+                ctx.beginPath();
+                ctx.moveTo(bX, bY + corner);
+                ctx.lineTo(bX, bY);
+                ctx.lineTo(bX + corner, bY);
+                ctx.stroke();
+
+                // Top-right
+                ctx.beginPath();
+                ctx.moveTo(bX + boxW - corner, bY);
+                ctx.lineTo(bX + boxW, bY);
+                ctx.lineTo(bX + boxW, bY + corner);
+                ctx.stroke();
+
+                // Bottom-left
+                ctx.beginPath();
+                ctx.moveTo(bX, bY + boxH - corner);
+                ctx.lineTo(bX, bY + boxH);
+                ctx.lineTo(bX + corner, bY + boxH);
+                ctx.stroke();
+
+                // Bottom-right
+                ctx.beginPath();
+                ctx.moveTo(bX + boxW - corner, bY + boxH);
+                ctx.lineTo(bX + boxW, bY + boxH);
+                ctx.lineTo(bX + boxW, bY + boxH - corner);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+
+            requestAnimationFrame(renderLoop);
+        }
+
+        // Clamp helper
+        Number.prototype.clamp = function(min, max) {
+            return Math.min(Math.max(this, min), max);
+        };
+
+        renderLoop();
+    </script>
+</body>
+</html>

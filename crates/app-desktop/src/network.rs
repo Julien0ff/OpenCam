@@ -16,10 +16,10 @@ pub fn start_mdns_broadcaster(state: AppState, port: u16) -> Result<ServiceDaemo
     let mdns = ServiceDaemon::new()?;
     let host_name = std::fs::read_to_string("/etc/hostname")
         .map(|s| format!("{}.local.", s.trim()))
-        .unwrap_or_else(|_| "opencamlink-desktop.local.".to_string());
+        .unwrap_or_else(|_| "opencam-desktop.local.".to_string());
 
     let service_type = MDNS_SERVICE_TYPE;
-    let instance_name = "OpenCamLink-Desktop";
+    let instance_name = "OpenCam-Desktop";
 
     let mut properties = HashMap::new();
     properties.insert("version".to_string(), "1.0".to_string());

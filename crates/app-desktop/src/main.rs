@@ -17,7 +17,7 @@ async fn main() -> Result<(), anyhow::Error> {
         )
         .init();
 
-    info!("Starting OpenCamLink Desktop Multi-Camera Studio...");
+    info!("Starting OpenCam Studio...");
 
     let state = AppState::default();
 
@@ -61,12 +61,12 @@ async fn main() -> Result<(), anyhow::Error> {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1280.0, 800.0])
             .with_min_inner_size([960.0, 600.0])
-            .with_title("OpenCamLink - Studio Régie Multi-Caméras"),
+            .with_title("OpenCam Studio"),
         ..Default::default()
     };
 
     eframe::run_native(
-        "OpenCamLink Studio",
+        "OpenCam Studio",
         native_options,
         Box::new(|_cc| Ok(Box::new(DesktopStudioApp::new(state)))),
     )

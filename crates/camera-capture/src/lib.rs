@@ -4,11 +4,12 @@
 //! iOS (AVFoundation), and dynamic real-time frame generator for local testing.
 
 pub mod android;
+pub mod face_tracking;
 pub mod generator;
 pub mod ios;
 
 use core_protocol::{
-    CameraCapabilities, CameraFacing, CameraInfo, CodecType, Orientation,
+    CameraCapabilities, CameraFacing, CameraInfo, CodecType, FaceTrackingConfig, Orientation,
     PixelFormat, Resolution, StreamConfig,
 };
 use generator::DynamicFrameGenerator;
@@ -82,6 +83,9 @@ pub trait VideoCapture: Send + Sync {
     /// Toggles torch / flashlight.
     fn set_torch(&mut self, enabled: bool) -> Result<(), CaptureError>;
 
+    /// Sets Center Stage / Head & Face Tracking with auto-zoom based on distance.
+    fn set_face_tracking(&mut self, config: FaceTrackingConfig) -> Result<(), CaptureError>;
+
     /// Checks if video capture thread is currently running.
     fn is_streaming(&self) -> bool;
 }
@@ -96,6 +100,7 @@ pub struct DynamicCameraCapture {
     mirror_v: bool,
     orientation: Orientation,
     torch_enabled: bool,
+    face_tracking: Arc<std::sync::Mutex<FaceTrackingConfig>>,
     is_running: Arc<AtomicBool>,
     worker_handle: Option<JoinHandle<()>>,
     capabilities: CameraCapabilities,
@@ -164,6 +169,7 @@ impl DynamicCameraCapture {
             mirror_v: false,
             orientation: Orientation::Deg0,
             torch_enabled: false,
+            face_tracking: Arc::new(std::sync::Mutex::new(FaceTrackingConfig::default())),
             is_running: Arc::new(AtomicBool::new(false)),
             worker_handle: None,
             capabilities,
@@ -191,6 +197,7 @@ impl VideoCapture for DynamicCameraCapture {
 
         self.is_running.store(true, Ordering::SeqCst);
         let is_running = self.is_running.clone();
+        let face_tracking_clone = self.face_tracking.clone();
 
         let width = config.width;
         let height = config.height;
@@ -213,11 +220,16 @@ impl VideoCapture for DynamicCameraCapture {
                     let frame_start = Instant::now();
                     let timestamp_us = start_instant.elapsed().as_micros() as u64;
 
-                    // Generate a live frame
+                    // Apply active face tracking config
+                    if let Ok(cfg) = face_tracking_clone.lock() {
+                        generator.set_face_tracking(cfg.clone());
+                    }
+
+                    // Generate a live frame with dynamic face tracking and transformations
                     let rgba_data = generator.generate_rgba_frame(
                         width,
                         height,
-                        1.0, // Base zoom applied at generator level or updated live
+                        1.0,
                         false,
                         false,
                         Orientation::Deg0,
@@ -289,6 +301,14 @@ impl VideoCapture for DynamicCameraCapture {
     fn set_torch(&mut self, enabled: bool) -> Result<(), CaptureError> {
         self.torch_enabled = enabled;
         info!("Torch toggled: {}", enabled);
+        Ok(())
+    }
+
+    fn set_face_tracking(&mut self, config: FaceTrackingConfig) -> Result<(), CaptureError> {
+        info!("Face tracking updated: enabled={}, auto_zoom={}, framing={:?}", config.enabled, config.auto_zoom, config.framing_mode);
+        if let Ok(mut lock) = self.face_tracking.lock() {
+            *lock = config;
+        }
         Ok(())
     }
 

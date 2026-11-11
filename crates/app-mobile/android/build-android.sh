@@ -2,11 +2,11 @@
 set -e
 
 # ==============================================================================
-# OpenCamLink - Script de Cross-Compilation Android via cargo-ndk
+# OpenCam - Script de Cross-Compilation Android via cargo-ndk
 # ==============================================================================
 
 echo "=========================================================="
-echo "  OpenCamLink - Compilation Mobile Android (Full Rust NDK)"
+echo "  OpenCam - Compilation Mobile Android (Full Rust NDK)"
 echo "=========================================================="
 
 # 1. Vérification des prérequis
@@ -43,3 +43,4 @@ echo "[+] Fichiers générés dans : $OUTPUT_DIR/arm64-v8a/libapp_mobile.so"
 echo ""
 echo "[*] Pour déployer sur votre smartphone connecté via USB :"
 echo "    adb install -r android/app/build/outputs/apk/release/app-release.apk"
+

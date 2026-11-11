@@ -181,3 +181,59 @@ pub struct StreamStats {
     pub temperature_c: f32,
     pub timestamp_ms: u64,
 }
+
+/// Framing mode for Center Stage / Auto-framing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub enum FramingMode {
+    #[default]
+    HeadAndShoulders, // Visage et épaules (close-up)
+    Torso,            // Buste
+    GroupWide,        // Plan large / multi-personnes
+}
+
+impl std::fmt::Display for FramingMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HeadAndShoulders => write!(f, "Visage"),
+            Self::Torso => write!(f, "Buste"),
+            Self::GroupWide => write!(f, "Groupe"),
+        }
+    }
+}
+
+/// Head tracking and distance-based auto-zoom configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FaceTrackingConfig {
+    pub enabled: bool,
+    pub auto_zoom: bool,
+    pub framing_mode: FramingMode,
+    pub smoothness: f32, // 0.05 (très doux) à 1.0 (instantané)
+    pub zoom_min: f32,
+    pub zoom_max: f32,
+}
+
+impl Default for FaceTrackingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            auto_zoom: true,
+            framing_mode: FramingMode::HeadAndShoulders,
+            smoothness: 0.15,
+            zoom_min: 1.0,
+            zoom_max: 3.5,
+        }
+    }
+}
+
+/// Detected face bounding box and distance estimation.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
+pub struct FaceMetrics {
+    pub detected: bool,
+    pub center_x: f32,       // 0.0 to 1.0 normalized
+    pub center_y: f32,       // 0.0 to 1.0 normalized
+    pub width: f32,          // 0.0 to 1.0 normalized
+    pub height: f32,         // 0.0 to 1.0 normalized
+    pub distance_factor: f32,// 1.0 = optimal, > 1.0 = subject is far, < 1.0 = subject is close
+    pub confidence: f32,     // 0.0 to 1.0
+}
+

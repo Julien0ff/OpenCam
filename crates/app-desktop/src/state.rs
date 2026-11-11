@@ -1,5 +1,5 @@
 use core_protocol::{
-    CameraCapabilities, ControlCommand, DeviceInfo, Orientation, StreamConfig,
+    CameraCapabilities, ControlCommand, DeviceInfo, FaceTrackingConfig, Orientation, StreamConfig,
     StreamStats,
 };
 use std::collections::HashMap;
@@ -22,6 +22,7 @@ pub struct ConnectedCamera {
     pub mirror_v: bool,
     pub orientation: Orientation,
     pub torch_enabled: bool,
+    pub face_tracking: FaceTrackingConfig,
 
     // Live video frame texture
     pub latest_rgba_frame: Option<Arc<Vec<u8>>>,
@@ -60,6 +61,7 @@ impl ConnectedCamera {
             mirror_v: false,
             orientation: Orientation::Deg0,
             torch_enabled: false,
+            face_tracking: FaceTrackingConfig::default(),
             latest_rgba_frame: None,
             frame_width: 1280,
             frame_height: 720,

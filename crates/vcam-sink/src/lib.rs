@@ -129,3 +129,4 @@ pub fn create_default_sink() -> Box<dyn VirtualCameraSink> {
         Box::new(NullSink)
     }
 }
+

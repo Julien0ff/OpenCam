@@ -36,3 +36,4 @@ libc = "0.2"
 core-protocol = { path = "crates/core-protocol" }
 camera-capture = { path = "crates/camera-capture" }
 vcam-sink = { path = "crates/vcam-sink" }
+

@@ -12,3 +12,4 @@ pub extern "C" fn android_main(app: winit::platform::android::activity::AndroidA
     tracing::info!("OpenCamLink Android Native Activity launched!");
     // Runs mobile engine with native window
 }
+

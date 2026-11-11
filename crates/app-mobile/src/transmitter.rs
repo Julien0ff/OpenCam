@@ -85,7 +85,7 @@ impl TransmitterEngine {
         &self,
         desktop_addr: SocketAddr,
     ) -> Result<(), anyhow::Error> {
-        info!("Connecting to OpenCamLink Desktop at {}", desktop_addr);
+        info!("Connecting to OpenCam Desktop at {}", desktop_addr);
         let mut stream = TcpStream::connect(desktop_addr).await?;
         self.is_connected.store(true, Ordering::SeqCst);
 
@@ -94,7 +94,7 @@ impl TransmitterEngine {
 
         let device_info = DeviceInfo {
             device_id: "phone-rust-01".to_string(),
-            device_name: "Smartphone (OpenCamLink)".to_string(),
+            device_name: "Smartphone (OpenCam)".to_string(),
             os: std::env::consts::OS.to_string(),
             protocol_version: 1,
             battery_level: Some(0.88),
@@ -221,6 +221,9 @@ impl TransmitterEngine {
                         }
                         ControlCommand::SetTorch { enabled } => {
                             let _ = capture_source.set_torch(enabled);
+                        }
+                        ControlCommand::SetFaceTracking(config) => {
+                            let _ = capture_source.set_face_tracking(config);
                         }
                         ControlCommand::Ping { timestamp_ms } => {
                             let now = std::time::SystemTime::now()

@@ -18,7 +18,8 @@ pub use packet::{
 };
 pub use types::{
     CameraCapabilities, CameraFacing, CameraInfo, CodecType, DeviceInfo,
-    Orientation, PixelFormat, Resolution, StreamConfig, StreamStats,
+    FaceMetrics, FaceTrackingConfig, FramingMode, Orientation, PixelFormat,
+    Resolution, StreamConfig, StreamStats,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -44,3 +45,4 @@ pub enum ProtocolError {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 }
+

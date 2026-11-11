@@ -1,6 +1,6 @@
-# OpenCamLink - Guide de Cross-Compilation Android (Full Rust NDK)
+# OpenCam - Guide de Cross-Compilation Android (Full Rust NDK)
 
-Ce guide détaille la procédure complète pour compiler l'application mobile **OpenCamLink** pour les smartphones Android en utilisant la chaîne d'outils **Rust NDK** (`cargo-ndk`), sans framework hybride (zéro Flutter, zéro React Native, zéro Java lourd).
+Ce guide détaille la procédure complète pour compiler l'application mobile **OpenCam** pour les smartphones Android en utilisant la chaîne d'outils **Rust NDK** (`cargo-ndk`), sans framework hybride (zéro Flutter, zéro React Native, zéro Java lourd).
 
 ---
 
@@ -97,3 +97,4 @@ Lors du premier lancement, accordez les permissions :
 - **Appareil photo / Caméra**
 - **Réseau local** (pour la découverte mDNS)
 - **Désactiver l'optimisation de batterie** (recommandé pour éviter les coupures d'écran pendant un stream prolongé).
+
