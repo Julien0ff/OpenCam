@@ -4,8 +4,10 @@
 //! without any JNI overhead to achieve low-latency hardware capture and encoding.
 
 #[cfg(target_os = "android")]
+#[allow(unused_imports)]
 use ndk_sys::*;
-use tracing::warn;
+#[allow(unused_imports)]
+use tracing::{info, warn};
 
 pub struct AndroidCamera2Pipeline {
     #[allow(dead_code)]

@@ -3,87 +3,65 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>OpenCam — vos téléphones deviennent une régie vidéo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>OpenCam — vos téléphones, une vraie régie vidéo</title>
     <meta name="description"
         content="OpenCam transforme un ou plusieurs smartphones en webcams pour votre ordinateur. Passez de l’un à l’autre en un clic et utilisez le résultat dans Zoom, OBS, Discord ou Teams. Libre, 100 % Rust, sans compte ni cloud.">
-    <meta property="og:title" content="OpenCam — vos téléphones deviennent une régie vidéo">
-    <meta property="og:description"
-        content="Webcam virtuelle et régie multi-caméras open source, 100 % Rust. Windows et Linux.">
-    <meta name="theme-color" content="#f0f0ee" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#111113" media="(prefers-color-scheme: dark)">
+    <meta property="og:title" content="OpenCam — vos téléphones, une vraie régie vidéo">
+    <meta property="og:description" content="Webcam virtuelle et régie multi-caméras open source. Windows et Linux.">
+    <meta name="theme-color" content="#f4f3ef">
     <link rel="icon"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2316171a'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%23e0282b'/%3E%3C/svg%3E">
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23111'/%3E%3Ccircle cx='16' cy='16' r='6.5' fill='none' stroke='%23f4f3ef' stroke-width='2.5'/%3E%3C/svg%3E">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&display=swap"
         rel="stylesheet">
     <style>
-        /* ------------------------------------------------------------------
-           Tokens
-           Le rouge « tally » a un seul sens : à l’antenne. Il n’est utilisé
-           nulle part ailleurs (ni boutons, ni liens, ni tableau).
-           ------------------------------------------------------------------ */
+        /* ==================================================================
+           Tokens — voir docs/design/DESIGN_SYSTEM.md
+           ================================================================== */
         :root {
-            color-scheme: light dark;
+            color-scheme: light;
 
-            --paper: #f0f0ee;
-            /* fond de page */
-            --surface: #ffffff;
-            /* cartes */
-            --ink: #141416;
-            /* texte principal — 16.9:1 sur paper */
-            --ink-2: #55565c;
-            /* texte secondaire — 6.5:1 sur paper */
-            --ink-3: #66676d;
-            /* légendes — 5.0:1 sur paper */
-            --rule: #dcdcd8;
-            --rule-strong: #c4c4bf;
+            --paper: #f4f3ef;
+            --paper-2: #ebe9e3;
+            --card: #ffffff;
+            --ink: #111111;
+            /* 17.6:1 sur paper */
+            --ink-2: #5b5b58;
+            /* 6.3:1 sur paper  */
+            --ink-3: #6e6e6a;
+            /* 4.9:1 sur paper  */
+            --line: rgba(17, 17, 17, 0.08);
+            --line-2: rgba(17, 17, 17, 0.14);
+            --live: #e5484d;
+            /* un seul usage : signal « en direct » */
+            --focus: #2f5bff;
 
-            --tally: #e0282b;
-            /* PGM / ON AIR */
-            --tally-text: #c01d1f;
-            /* même signal, en texte — 5.1:1 sur paper */
-            --preview: #22a35a;
-            /* PVW */
+            --glass-dark-bg: rgba(255, 255, 255, 0.12);
+            --glass-dark-line: rgba(255, 255, 255, 0.26);
+            --glass-light-bg: rgba(255, 255, 255, 0.68);
+            --glass-light-line: rgba(255, 255, 255, 0.9);
 
-            --device: #16171a;
-            /* la régie reste un objet sombre */
-            --device-2: #1f2024;
-            --device-ink: #ecece9;
-            --device-mute: #9a9ba1;
-            /* 6.4:1 sur device */
+            --shadow-float: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 24px 48px -24px rgba(25, 25, 35, 0.28), 0 2px 6px rgba(25, 25, 35, 0.05);
 
-            --focus: #1d4ed8;
+            --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+            --sans: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
 
-            --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
-            --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+            --wrap: 1180px;
+            --gutter: clamp(20px, 5vw, 48px);
+            --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
-            --radius: 14px;
-            --wrap: 1120px;
-            --gutter: clamp(20px, 5vw, 40px);
+            /* Pilotés par le JS */
+            --wx: 20vw;
+            --wt: 18vh;
+            --ww: 60vw;
+            --wh: 34vw;
         }
 
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --paper: #111113;
-                --surface: #18181b;
-                --ink: #ececea;
-                --ink-2: #a3a3a8;
-                --ink-3: #8b8b91;
-                --rule: #2a2a2e;
-                --rule-strong: #3a3a3f;
-                --tally-text: #ff6b6b;
-                --device: #0b0b0d;
-                --device-2: #1a1b1f;
-                --focus: #8ab4ff;
-            }
-        }
-
-        /* ------------------------------------------------------------------
-           Base
-           ------------------------------------------------------------------ */
         *,
         *::before,
         *::after {
@@ -92,34 +70,42 @@
 
         html {
             -webkit-text-size-adjust: 100%;
-            scroll-behavior: smooth;
         }
 
         body {
             margin: 0;
             background: var(--paper);
             color: var(--ink);
-            font-family: var(--font-body);
+            font-family: var(--sans);
             font-size: 1.0625rem;
             line-height: 1.55;
             -webkit-font-smoothing: antialiased;
-            text-rendering: optimizeLegibility;
             -webkit-tap-highlight-color: transparent;
+            overflow-x: clip;
         }
 
         h1,
         h2,
-        h3 {
-            font-family: var(--font-display);
-            font-stretch: 88%;
-            line-height: 1.05;
-            letter-spacing: -0.015em;
+        h3,
+        p {
             margin: 0;
+        }
+
+        h1,
+        h2 {
+            font-family: var(--serif);
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            line-height: 0.98;
             text-wrap: balance;
         }
 
+        h2 em,
+        h1 em {
+            font-style: italic;
+        }
+
         p {
-            margin: 0;
             text-wrap: pretty;
         }
 
@@ -129,31 +115,25 @@
             text-decoration-thickness: 1px;
         }
 
-        a:hover {
-            text-decoration-thickness: 2px;
-        }
-
-        code,
-        kbd,
-        .mono {
-            font-family: var(--font-mono);
-            font-size: 0.875em;
+        code {
+            font-family: var(--mono);
+            font-size: 0.86em;
             font-variant-numeric: tabular-nums slashed-zero;
-        }
-
-        :focus-visible {
-            outline: 2px solid var(--focus);
-            outline-offset: 3px;
-            border-radius: 6px;
-        }
-
-        [id] {
-            scroll-margin-top: 88px;
         }
 
         button,
         a {
             touch-action: manipulation;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--focus);
+            outline-offset: 3px;
+            border-radius: 10px;
+        }
+
+        [id] {
+            scroll-margin-top: 96px;
         }
 
         .wrap {
@@ -175,14 +155,14 @@
         }
 
         .skip {
-            position: absolute;
+            position: fixed;
             left: 12px;
-            top: -60px;
-            z-index: 100;
+            top: -80px;
+            z-index: 200;
             background: var(--ink);
             color: var(--paper);
-            padding: 10px 14px;
-            border-radius: 8px;
+            padding: 12px 16px;
+            border-radius: 12px;
             text-decoration: none;
         }
 
@@ -190,1141 +170,1610 @@
             top: 12px;
         }
 
-        /* Buttons ---------------------------------------------------------- */
+        /* Boutons ---------------------------------------------------------- */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
             min-height: 48px;
-            padding: 0 22px;
+            padding: 0 24px;
             border-radius: 999px;
             border: 1px solid transparent;
-            font: 600 1rem/1 var(--font-body);
+            font: 500 0.9688rem/1 var(--sans);
             text-decoration: none;
             cursor: pointer;
-            transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+            white-space: nowrap;
+            transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s var(--ease);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
         }
 
         .btn svg {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             flex: none;
         }
 
-        .btn-primary {
+        .btn-ink {
             background: var(--ink);
-            color: var(--paper);
+            color: #fff;
         }
 
-        .btn-primary:hover {
-            background: color-mix(in srgb, var(--ink) 82%, var(--paper));
+        .btn-ink:hover {
+            background: #2a2a2a;
         }
 
-        .btn-quiet {
-            border-color: var(--rule-strong);
+        .btn-white {
+            background: #fff;
+            color: var(--ink);
+        }
+
+        .btn-white:hover {
+            background: #ececea;
+        }
+
+        .btn-glass {
+            background: var(--glass-dark-bg);
+            border-color: var(--glass-dark-line);
+            color: #fff;
+            backdrop-filter: blur(16px) saturate(1.4);
+            -webkit-backdrop-filter: blur(16px) saturate(1.4);
+        }
+
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-line {
+            border-color: var(--line-2);
             color: var(--ink);
             background: transparent;
         }
 
-        .btn-quiet:hover {
+        .btn-line:hover {
             border-color: var(--ink);
         }
 
         .btn-sm {
             min-height: 44px;
             padding: 0 18px;
-            font-size: 0.9375rem;
+            font-size: 0.9063rem;
         }
 
-        /* ------------------------------------------------------------------
-           Header
-           ------------------------------------------------------------------ */
-        .site-header {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background: color-mix(in srgb, var(--paper) 88%, transparent);
-            backdrop-filter: saturate(1.4) blur(12px);
-            -webkit-backdrop-filter: saturate(1.4) blur(12px);
-            border-bottom: 1px solid var(--rule);
-        }
-
-        @media (prefers-reduced-transparency: reduce) {
-            .site-header {
-                background: var(--paper);
-                backdrop-filter: none;
-                -webkit-backdrop-filter: none;
-            }
-        }
-
-        .site-header .wrap {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 24px;
-            height: 64px;
-        }
-
-        .wordmark {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            font: 700 1.1875rem/1 var(--font-display);
-            font-stretch: 92%;
-            letter-spacing: -0.01em;
-            text-decoration: none;
-        }
-
-        .wordmark-lamp {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--tally);
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--tally) 22%, transparent);
-        }
-
-        .site-nav {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .site-nav a:not(.btn) {
-            display: inline-flex;
-            align-items: center;
-            min-height: 44px;
-            padding: 0 12px;
-            color: var(--ink-2);
-            text-decoration: none;
-            font-size: 0.9375rem;
-            border-radius: 8px;
-        }
-
-        .site-nav a:not(.btn):hover {
-            color: var(--ink);
-        }
-
-        .site-nav .btn {
-            margin-left: 8px;
-        }
-
-        @media (max-width: 760px) {
-            .site-nav a:not(.btn) {
-                display: none;
-            }
-        }
-
-        /* ------------------------------------------------------------------
-           Hero
-           ------------------------------------------------------------------ */
-        .hero {
-            padding-block: clamp(48px, 8vw, 96px) clamp(56px, 8vw, 104px);
-        }
-
-        .hero .wrap {
-            display: grid;
-            grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-            gap: clamp(40px, 5vw, 72px);
-            align-items: center;
-        }
-
-        @media (max-width: 920px) {
-            .hero .wrap {
-                grid-template-columns: minmax(0, 1fr);
-            }
-        }
-
-        .hero h1 {
-            font-size: clamp(2.5rem, 1.5rem + 3.4vw, 4.25rem);
-            font-weight: 750;
-            font-stretch: 82%;
-            line-height: 0.98;
-            letter-spacing: -0.025em;
-        }
-
-        .hero-lede {
-            margin-top: 24px;
-            font-size: 1.1875rem;
-            color: var(--ink-2);
-            max-width: 34em;
-        }
-
-        .hero-actions {
-            margin-top: 32px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .hero-meta {
-            margin-top: 20px;
-            font-size: 0.875rem;
-            color: var(--ink-3);
-        }
-
-        .hero-meta span+span::before {
-            content: "·";
-            margin: 0 8px;
-        }
-
-        /* ------------------------------------------------------------------
-           La régie (élément signature)
-           ------------------------------------------------------------------ */
-        .rig {
-            margin: 0;
-            background: var(--device);
-            color: var(--device-ink);
-            border-radius: 18px;
-            padding: 12px;
-            box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.06),
-                0 1px 2px rgba(0, 0, 0, 0.12),
-                0 32px 64px -32px rgba(0, 0, 0, 0.45);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .rig {
-                box-shadow: inset 0 0 0 1px #26272b, 0 32px 64px -32px rgba(0, 0, 0, 0.8);
-            }
-        }
-
-        .rig-bar {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 4px 6px 12px;
-            font-family: var(--font-display);
-            font-stretch: 75%;
-            font-size: 0.8125rem;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .onair {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 4px 10px 4px 8px;
-            border: 1px solid var(--tally);
-            border-radius: 6px;
-            color: #fff;
-        }
-
-        .lamp {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--tally);
-            box-shadow: 0 0 8px var(--tally);
-        }
-
-        .rig-title {
-            color: var(--device-mute);
-        }
-
-        .rig-tc {
-            margin-left: auto;
-            font-family: var(--font-mono);
-            font-size: 0.8125rem;
-            letter-spacing: 0;
-            font-variant-numeric: tabular-nums slashed-zero;
-            color: var(--device-mute);
-        }
-
-        .pgm {
-            position: relative;
-            aspect-ratio: 16 / 9;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #000;
-            box-shadow: 0 0 0 2px var(--tally);
-        }
-
-        .pgm svg {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        .tag {
-            position: absolute;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 8px;
-            border-radius: 5px;
-            background: rgba(10, 10, 12, 0.72);
-            font-family: var(--font-display);
-            font-stretch: 75%;
-            font-size: 0.8125rem;
-            font-weight: 600;
-            letter-spacing: 0.04em;
-            color: #fff;
-        }
-
-        .tag b {
-            font-weight: 800;
-            letter-spacing: 0.08em;
-        }
-
-        .pgm .tag-name {
-            left: 10px;
-            top: 10px;
-        }
-
-        .pgm .tag-name b {
-            color: #ff8a8a;
-        }
-
-        .pgm .tag-out {
-            right: 10px;
-            bottom: 10px;
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            letter-spacing: 0;
-            color: #d6d6d3;
-        }
-
-        .bus {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .cam {
-            appearance: none;
-            border: 0;
-            margin: 0;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding: 6px 6px 8px;
-            min-height: 44px;
-            background: var(--device-2);
-            color: var(--device-ink);
-            border-radius: 10px;
-            box-shadow: inset 0 0 0 2px transparent;
-            text-align: left;
-            cursor: pointer;
-            font: inherit;
-            transition: box-shadow .12s ease, background-color .12s ease;
-        }
-
-        .cam:hover {
-            background: #26272c;
-        }
-
-        .cam:focus-visible {
-            outline-color: #8ab4ff;
-            outline-offset: 2px;
-            border-radius: 10px;
-        }
-
-        .cam-view {
-            position: relative;
-            display: block;
-            aspect-ratio: 16 / 9;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-
-        .cam-view svg {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        .cam-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-width: 0;
-            font-size: 0.8125rem;
-            color: var(--device-mute);
-            padding-inline: 2px;
-        }
-
-        .cam-label span {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .cam kbd {
-            flex: none;
-            display: inline-grid;
-            place-items: center;
-            width: 20px;
-            height: 20px;
-            border-radius: 5px;
-            background: #2c2d33;
-            color: var(--device-ink);
-            font-size: 0.75rem;
-        }
-
-        .cam .tag {
-            left: 6px;
-            top: 6px;
-            font-size: 0.6875rem;
-            padding: 2px 6px;
-            visibility: hidden;
-        }
-
-        .cam[data-state="pgm"] {
-            box-shadow: inset 0 0 0 2px var(--tally);
-        }
-
-        .cam[data-state="pgm"] .tag {
-            visibility: visible;
-            background: var(--tally);
-        }
-
-        .cam[data-state="pgm"] .cam-label {
-            color: var(--device-ink);
-        }
-
-        .cam[data-state="pvw"] {
-            box-shadow: inset 0 0 0 2px var(--preview);
-        }
-
-        .cam[data-state="pvw"] .tag {
-            visibility: visible;
-            background: #157a41;
-        }
-
-        .rig-caption {
-            padding: 12px 6px 2px;
-            font-size: 0.8125rem;
-            color: var(--device-mute);
-        }
-
-        /* ------------------------------------------------------------------
-           Sections
-           ------------------------------------------------------------------ */
-        .section {
-            padding-block: clamp(64px, 9vw, 112px);
-            border-top: 1px solid var(--rule);
-        }
-
-        .section-head {
-            max-width: 40em;
-            margin-bottom: clamp(32px, 4vw, 48px);
-        }
-
-        .section-head h2 {
-            font-size: clamp(2rem, 1.4rem + 2vw, 2.875rem);
-            font-weight: 750;
-            font-stretch: 84%;
-        }
-
-        .section-head p {
-            margin-top: 14px;
-            color: var(--ink-2);
-            font-size: 1.125rem;
-        }
-
-        /* Étapes — une vraie séquence, donc numérotée */
-        .steps {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: clamp(24px, 3vw, 40px);
-            counter-reset: step;
-        }
-
-        @media (max-width: 820px) {
-            .steps {
-                grid-template-columns: minmax(0, 1fr);
-            }
-        }
-
-        .steps li {
-            counter-increment: step;
-            padding-top: 20px;
-            border-top: 2px solid var(--ink);
-        }
-
-        .steps li::before {
-            content: counter(step);
-            display: block;
-            margin-bottom: 14px;
-            font: 800 2.75rem/1 var(--font-display);
-            font-stretch: 70%;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .steps h3 {
-            font-size: 1.375rem;
-            font-weight: 700;
-        }
-
-        .steps p {
-            margin-top: 10px;
-            color: var(--ink-2);
-        }
-
-        /* Fiche technique */
-        .spec {
-            background: var(--surface);
-            border-radius: var(--radius);
-            border: 1px solid var(--rule);
-        }
-
-        .spec-row {
-            display: grid;
-            grid-template-columns: 200px minmax(0, 1fr) 240px;
-            gap: 12px 32px;
-            align-items: baseline;
-            padding: 28px clamp(20px, 3vw, 36px);
-        }
-
-        .spec-row+.spec-row {
-            border-top: 1px solid var(--rule);
-        }
-
-        .spec-figure {
-            font: 750 2rem/1 var(--font-display);
-            font-stretch: 72%;
-            letter-spacing: -0.01em;
-            font-variant-numeric: tabular-nums;
-            white-space: nowrap;
-        }
-
-        .spec-body h3 {
-            font-size: 1.1875rem;
-            font-weight: 700;
-            font-stretch: 95%;
-            letter-spacing: 0;
-        }
-
-        .spec-body p {
-            margin-top: 8px;
-            color: var(--ink-2);
-            max-width: 38em;
-        }
-
-        .spec-src {
-            font-size: 0.8125rem;
-            color: var(--ink-3);
-            text-align: right;
-            overflow-wrap: anywhere;
-        }
-
-        @media (max-width: 900px) {
-            .spec-row {
-                grid-template-columns: minmax(0, 1fr);
-            }
-
-            .spec-src {
-                text-align: left;
-            }
-        }
-
-        /* Comparatif */
-        .table-wrap {
-            background: var(--surface);
-            border: 1px solid var(--rule);
-            border-radius: var(--radius);
-            overflow-x: auto;
-            overscroll-behavior-x: contain;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9375rem;
-            min-width: 720px;
-        }
-
-        caption {
-            text-align: left;
-        }
-
-        th,
-        td {
-            padding: 16px 20px;
-            text-align: left;
-            vertical-align: top;
-        }
-
-        thead th {
-            font: 700 0.9375rem/1.2 var(--font-display);
-            font-stretch: 88%;
-            border-bottom: 1px solid var(--rule-strong);
-            color: var(--ink-2);
-        }
-
-        tbody tr+tr th,
-        tbody tr+tr td {
-            border-top: 1px solid var(--rule);
-        }
-
-        tbody th {
-            font-weight: 600;
-            color: var(--ink);
-            width: 24%;
-        }
-
-        td {
-            color: var(--ink-2);
-            font-variant-numeric: tabular-nums;
-        }
-
-        .col-us {
-            background: color-mix(in srgb, var(--ink) 4%, transparent);
-        }
-
-        thead .col-us {
-            color: var(--ink);
-        }
-
-        td.col-us {
-            color: var(--ink);
-            font-weight: 600;
-        }
-
-        .table-note {
-            margin-top: 14px;
-            font-size: 0.875rem;
-            color: var(--ink-3);
-        }
-
-        /* Téléchargements */
-        .dl {
-            background: var(--surface);
-            border: 1px solid var(--rule);
-            border-radius: var(--radius);
-        }
-
-        .dl-row {
-            display: grid;
-            grid-template-columns: 180px minmax(0, 1fr) auto;
-            gap: 12px 32px;
-            align-items: center;
-            padding: 24px clamp(20px, 3vw, 36px);
-        }
-
-        .dl-row+.dl-row {
-            border-top: 1px solid var(--rule);
-        }
-
-        .dl-row h3 {
-            font-size: 1.375rem;
-            font-weight: 700;
-        }
-
-        .dl-row h3 small {
-            display: block;
-            margin-top: 4px;
-            font: 500 0.8125rem/1.2 var(--font-body);
-            color: var(--ink-3);
-            letter-spacing: 0;
-        }
-
-        .dl-info p {
-            color: var(--ink-2);
-        }
-
-        .dl-info code {
-            color: var(--ink-3);
-            overflow-wrap: anywhere;
-        }
-
-        .dl-info p+p {
-            margin-top: 4px;
-        }
-
-        .dl-extra {
-            grid-column: 2 / -1;
-        }
-
-        @media (max-width: 760px) {
-            .dl-row {
-                grid-template-columns: minmax(0, 1fr);
-            }
-
-            .dl-extra {
-                grid-column: auto;
-            }
-
-            .dl-row .btn {
-                justify-self: start;
-            }
-        }
-
-        .term {
-            position: relative;
-            background: var(--device);
-            color: #d9d9d6;
-            border-radius: 10px;
-            padding: 16px 56px 16px 18px;
-            font-family: var(--font-mono);
-            font-size: 0.8125rem;
-            line-height: 1.7;
-            overflow-x: auto;
-        }
-
-        .term pre {
-            margin: 0;
-            font: inherit;
-            white-space: pre;
-        }
-
-        .term .c {
-            color: #8e8f95;
-        }
-
-        .term .p {
-            color: #8e8f95;
-            user-select: none;
-        }
-
-        .copy {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            width: 44px;
-            height: 44px;
-            border-radius: 8px;
-            display: grid;
-            place-items: center;
-            border: 0;
-            background: transparent;
-            color: #a8a9ae;
-            cursor: pointer;
-        }
-
-        .copy:hover {
-            background: #26272c;
-            color: #fff;
-        }
-
-        .copy svg {
+        .btn-play {
             width: 18px;
             height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            color: var(--ink);
+            display: grid;
+            place-items: center;
         }
 
-        .copy:focus-visible {
-            outline-color: #8ab4ff;
-            outline-offset: -2px;
+        .btn-play svg {
+            width: 8px;
+            height: 8px;
+            margin-left: 1px;
         }
 
-        .checksums {
-            margin-top: 16px;
-            font-size: 0.875rem;
-            color: var(--ink-3);
+        /* ==================================================================
+           Scène vidéo fixe (fond immersif)
+           ================================================================== */
+        .stage {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
         }
 
-        /* Footer */
-        .site-footer {
-            border-top: 1px solid var(--rule);
-            padding-block: 32px 48px;
-            font-size: 0.875rem;
-            color: var(--ink-3);
+        .stage-media {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            background: #2b2d31;
+            clip-path: inset(0 0 0 0 round 0);
+            will-change: clip-path;
         }
 
-        .site-footer .wrap {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px 32px;
-            justify-content: space-between;
-            align-items: center;
+        .stage-zoom {
+            position: absolute;
+            inset: 0;
+            transform: scale(var(--zoom, 1.08));
+            transform-origin: 50% 45%;
+            will-change: transform;
         }
 
-        .site-footer nav {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px 20px;
+        .poster {
+            position: absolute;
+            inset: -20px;
+            background: url("assets/poster.jpg") center / cover no-repeat;
+            filter: blur(6px) saturate(0.9);
         }
 
-        .site-footer a {
-            color: var(--ink-2);
+        .yt {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: max(100vw, 177.78vh);
+            height: max(100vh, 56.25vw);
+            transform: translate(-50%, -50%) scale(1.08);
+            object-fit: cover;
+            pointer-events: none;
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            html {
-                scroll-behavior: auto;
-            }
-
-            *,
-            *::before,
-            *::after {
-                transition: none !important;
-            }
+        .yt-hero {
+            opacity: var(--yt-hero-op, 1);
+            transition: opacity 0.5s ease;
         }
+
+        .yt-finale {
+            opacity: var(--yt-finale-op, 0);
+            transition: opacity 0.5s ease;
+        }
+
+        .veil {
+                    position: absolute;
+                    inset: 0;
+                    background:
+                        radial-gradient(120% 80% at 50% 40%, rgba(16, 16, 20, 0.15), rgba(16, 16, 20, 0.55)),
+                        linear-gradient(180deg, rgba(16, 16, 20, 0.35) 0%, rgba(16, 16, 20, 0.05) 35%, rgba(16, 16, 20, 0.5) 100%);
+                    opacity: var(--veil, 1);
+                }
+
+                main,
+                .site-nav {
+                    position: relative;
+                    z-index: 1;
+                }
+
+                /* ==================================================================
+           Navigation — pilule de verre
+           ================================================================== */
+                .site-nav {
+                    position: fixed;
+                    z-index: 50;
+                    top: 16px;
+                    left: 0;
+                    right: 0;
+                    padding-inline: var(--gutter);
+                    display: grid;
+                    grid-template-columns: 1fr auto 1fr;
+                    align-items: center;
+                    gap: 16px;
+                    color: #fff;
+                    transition: color .35s ease;
+                }
+
+                .site-nav.on-paper {
+                    color: var(--ink);
+                }
+
+                .wordmark {
+                    justify-self: start;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 10px;
+                    min-height: 44px;
+                    font-weight: 600;
+                    font-size: 1.0625rem;
+                    letter-spacing: -0.01em;
+                    text-decoration: none;
+                }
+
+                .wordmark svg {
+                    width: 22px;
+                    height: 22px;
+                }
+
+                .nav-pill {
+                    display: flex;
+                    gap: 2px;
+                    padding: 4px;
+                    border-radius: 999px;
+                    background: var(--glass-dark-bg);
+                    border: 1px solid var(--glass-dark-line);
+                    backdrop-filter: blur(18px) saturate(1.5);
+                    -webkit-backdrop-filter: blur(18px) saturate(1.5);
+                    transition: background-color .35s ease, border-color .35s ease, box-shadow .35s ease;
+                }
+
+                .on-paper .nav-pill {
+                    background: var(--glass-light-bg);
+                    border-color: var(--glass-light-line);
+                    box-shadow: var(--shadow-float);
+                }
+
+                .nav-pill a {
+                    display: inline-flex;
+                    align-items: center;
+                    min-height: 36px;
+                    padding: 0 16px;
+                    border-radius: 999px;
+                    font-size: 0.875rem;
+                    text-decoration: none;
+                    opacity: 0.86;
+                    transition: background-color .2s ease, opacity .2s ease;
+                }
+
+                .nav-pill a:hover {
+                    opacity: 1;
+                    background: rgba(255, 255, 255, 0.14);
+                }
+
+                .on-paper .nav-pill a:hover {
+                    background: rgba(17, 17, 17, 0.05);
+                }
+
+                .nav-cta {
+                    justify-self: end;
+                }
+
+                .site-nav .btn-sm {
+                    min-height: 40px;
+                }
+
+                .site-nav .nav-cta {
+                    background: #fff;
+                    color: var(--ink);
+                }
+
+                .site-nav.on-paper .nav-cta {
+                    background: var(--ink);
+                    color: #fff;
+                }
+
+                @media (prefers-reduced-transparency: reduce) {
+
+                    .nav-pill,
+                    .btn-glass,
+                    .glass-card {
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
+                    }
+
+                    .nav-pill {
+                        background: rgba(20, 20, 24, 0.85);
+                    }
+
+                    .on-paper .nav-pill {
+                        background: #fff;
+                    }
+                }
+
+                @media (max-width: 820px) {
+                    .nav-pill {
+                        display: none;
+                    }
+
+                    .site-nav {
+                        grid-template-columns: 1fr auto;
+                    }
+                }
+
+                /* ==================================================================
+           Hero
+           ================================================================== */
+                .hero {
+                    position: relative;
+                    min-height: 100svh;
+                    display: grid;
+                    place-items: center;
+                    padding: 120px var(--gutter) 140px;
+                    color: #fff;
+                    text-align: center;
+                }
+
+                .hero-inner {
+                    max-width: 980px;
+                    opacity: calc(1 - var(--hp, 0) * 1.4);
+                    transform: translateY(calc(var(--hp, 0) * -60px)) scale(calc(1 - var(--hp, 0) * 0.04));
+                    filter: blur(calc(var(--hp, 0) * 8px));
+                    will-change: transform, opacity, filter;
+                }
+
+                .chip {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 6px 14px 6px 10px;
+                    border-radius: 999px;
+                    font-size: 0.8125rem;
+                    background: var(--glass-dark-bg);
+                    border: 1px solid var(--glass-dark-line);
+                    backdrop-filter: blur(14px);
+                    -webkit-backdrop-filter: blur(14px);
+                }
+
+                .chip-dot {
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    background: #fff;
+                    opacity: .9;
+                }
+
+                .hero h1 {
+                    margin-top: 28px;
+                    font-size: clamp(3.25rem, 1.6rem + 6.4vw, 7.25rem);
+                    text-shadow: 0 2px 40px rgba(0, 0, 0, 0.25);
+                }
+
+                .hero h1 em {
+                    display: block;
+                }
+
+                .hero-lede {
+                    margin: 28px auto 0;
+                    max-width: 34em;
+                    font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+                    color: rgba(255, 255, 255, 0.86);
+                }
+
+                .hero-actions {
+                    margin-top: 36px;
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 12px;
+                    justify-content: center;
+                }
+
+                .hero-foot {
+                    position: absolute;
+                    left: var(--gutter);
+                    right: var(--gutter);
+                    bottom: 28px;
+                    display: flex;
+                    align-items: flex-end;
+                    justify-content: space-between;
+                    gap: 16px;
+                    font-size: 0.8125rem;
+                    color: rgba(255, 255, 255, 0.78);
+                    opacity: calc(1 - var(--hp, 0) * 2);
+                }
+
+                .hero-foot p {
+                    text-align: left;
+                    line-height: 1.45;
+                }
+
+                .scroll-cue {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                .scroll-cue i {
+                    display: block;
+                    width: 1px;
+                    height: 44px;
+                    background: linear-gradient(rgba(255, 255, 255, .9), rgba(255, 255, 255, 0));
+                    transform-origin: top;
+                    animation: cue 2.4s var(--ease) infinite;
+                }
+
+                @keyframes cue {
+                    0% {
+                        transform: scaleY(0);
+                    }
+
+                    50% {
+                        transform: scaleY(1);
+                    }
+
+                    100% {
+                        transform: scaleY(1);
+                        opacity: 0;
+                    }
+                }
+
+                .media-toggle {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 50%;
+                    display: grid;
+                    place-items: center;
+                    cursor: pointer;
+                    background: var(--glass-dark-bg);
+                    border: 1px solid var(--glass-dark-line);
+                    color: #fff;
+                    backdrop-filter: blur(14px);
+                    -webkit-backdrop-filter: blur(14px);
+                }
+
+                .media-toggle svg {
+                    width: 14px;
+                    height: 14px;
+                }
+
+                .media-toggle .i-play {
+                    display: none;
+                }
+
+                .is-paused .media-toggle .i-play {
+                    display: block;
+                }
+
+                .is-paused .media-toggle .i-pause {
+                    display: none;
+                }
+
+                @media (max-width: 600px) {
+                    .hero-foot p {
+                        display: none;
+                    }
+                }
+
+                /* ==================================================================
+           Scène — la vidéo se referme en fenêtre
+           ================================================================== */
+                .scene {
+                    position: relative;
+                    height: 340vh;
+                }
+
+                .scene-sticky {
+                    position: sticky;
+                    top: 0;
+                    height: 100vh;
+                    height: 100svh;
+                    overflow: hidden;
+                }
+
+                .window {
+                    position: absolute;
+                    left: var(--wx);
+                    top: var(--wt);
+                    width: var(--ww);
+                    height: var(--wh);
+                }
+
+                .finder {
+                    position: absolute;
+                    inset: 14px;
+                    opacity: var(--k-ui, 0);
+                    transition: opacity .3s ease;
+                }
+
+                .finder span {
+                    position: absolute;
+                    width: 22px;
+                    height: 22px;
+                    border: 0 solid rgba(255, 255, 255, 0.85);
+                }
+
+                .finder span:nth-child(1) {
+                    left: 0;
+                    top: 0;
+                    border-left-width: 1.5px;
+                    border-top-width: 1.5px;
+                    border-top-left-radius: 8px;
+                }
+
+                .finder span:nth-child(2) {
+                    right: 0;
+                    top: 0;
+                    border-right-width: 1.5px;
+                    border-top-width: 1.5px;
+                    border-top-right-radius: 8px;
+                }
+
+                .finder span:nth-child(3) {
+                    left: 0;
+                    bottom: 0;
+                    border-left-width: 1.5px;
+                    border-bottom-width: 1.5px;
+                    border-bottom-left-radius: 8px;
+                }
+
+                .finder span:nth-child(4) {
+                    right: 0;
+                    bottom: 0;
+                    border-right-width: 1.5px;
+                    border-bottom-width: 1.5px;
+                    border-bottom-right-radius: 8px;
+                }
+
+                .glass-card {
+                    position: absolute;
+                    width: 216px;
+                    padding: 16px 18px;
+                    border-radius: 22px;
+                    background: var(--glass-light-bg);
+                    border: 1px solid var(--glass-light-line);
+                    backdrop-filter: blur(20px) saturate(1.5);
+                    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+                    box-shadow: var(--shadow-float);
+                    color: var(--ink);
+                    opacity: var(--c, 0);
+                    transform: translate3d(0, calc((1 - var(--c, 0)) * 28px), 0) scale(calc(0.94 + var(--c, 0) * 0.06));
+                    will-change: transform, opacity;
+                }
+
+                .glass-card strong {
+                    display: block;
+                    font-weight: 600;
+                    font-size: 0.9688rem;
+                    letter-spacing: -0.01em;
+                    line-height: 1.25;
+                }
+
+                .glass-card p {
+                    margin-top: 4px;
+                    font-size: 0.8125rem;
+                    color: var(--ink-2);
+                    line-height: 1.4;
+                }
+
+                .glass-card .big {
+                    font-family: var(--serif);
+                    font-size: 2.75rem;
+                    line-height: 1;
+                    letter-spacing: -0.02em;
+                }
+
+                .gc-icon {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 11px;
+                    display: grid;
+                    place-items: center;
+                    margin-bottom: 12px;
+                    background: #fff;
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+                }
+
+                .gc-icon svg {
+                    width: 18px;
+                    height: 18px;
+                }
+
+                .gc-live {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    margin-bottom: 10px;
+                    font-size: 0.75rem;
+                    color: var(--ink-2);
+                }
+
+                .gc-live i {
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    background: var(--live);
+                    box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.18);
+                }
+
+                .phones {
+                    display: flex;
+                    margin-bottom: 12px;
+                }
+
+                .phones span {
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 50%;
+                    border: 2px solid #fff;
+                    margin-left: -8px;
+                    background-size: cover;
+                    background-position: center;
+                }
+
+                .phones span:first-child {
+                    margin-left: 0;
+                }
+
+                .apps {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 6px;
+                    margin-top: 10px;
+                }
+
+                .apps span {
+                    font-size: 0.75rem;
+                    padding: 4px 10px;
+                    border-radius: 999px;
+                    background: #fff;
+                    border: 1px solid var(--line);
+                }
+
+                .gc-1 {
+                    left: -8%;
+                    top: 10%;
+                    transform-origin: right center;
+                }
+
+                .gc-2 {
+                    right: -9%;
+                    top: -6%;
+                }
+
+                .gc-3 {
+                    right: -11%;
+                    bottom: 8%;
+                }
+
+                .gc-4 {
+                    left: -12%;
+                    bottom: -10%;
+                    width: 236px;
+                }
+
+                @media (max-width: 980px) {
+
+                    .gc-1,
+                    .gc-4 {
+                        display: none;
+                    }
+
+                    .gc-2 {
+                        right: 4%;
+                        top: auto;
+                        bottom: -14%;
+                    }
+
+                    .gc-3 {
+                        display: none;
+                    }
+                }
+
+                .captions {
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    top: calc(var(--wt) + var(--wh) + clamp(20px, 4vh, 44px));
+                    text-align: center;
+                    padding-inline: var(--gutter);
+                }
+
+                .captions p {
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    padding-inline: var(--gutter);
+                    font-family: var(--serif);
+                    font-size: clamp(1.75rem, 1.1rem + 2.2vw, 3rem);
+                    line-height: 1.05;
+                    letter-spacing: -0.015em;
+                    opacity: var(--o, 0);
+                    transform: translateY(calc((1 - var(--o, 0)) * 18px));
+                    filter: blur(calc((1 - var(--o, 0)) * 6px));
+                }
+
+                .captions em {
+                    color: var(--ink-2);
+                }
+
+                .scene-count {
+                    position: absolute;
+                    left: var(--gutter);
+                    bottom: 28px;
+                    font-size: 0.8125rem;
+                    color: var(--ink-3);
+                    font-variant-numeric: tabular-nums;
+                    opacity: var(--k-ui, 0);
+                }
+
+                .scene-bar {
+                    position: absolute;
+                    right: var(--gutter);
+                    bottom: 34px;
+                    width: 120px;
+                    height: 2px;
+                    background: var(--line-2);
+                    border-radius: 2px;
+                    overflow: hidden;
+                    opacity: var(--k-ui, 0);
+                }
+
+                .scene-bar i {
+                    display: block;
+                    height: 100%;
+                    background: var(--ink);
+                    transform-origin: left;
+                    transform: scaleX(var(--sp, 0));
+                }
+
+                /* ==================================================================
+           Feuille papier — monte par-dessus la vidéo
+           ================================================================== */
+                .sheet {
+                    position: relative;
+                    z-index: 2;
+                    background: var(--paper);
+                    border-radius: 40px;
+                    box-shadow: 0 -30px 80px -40px rgba(0, 0, 0, 0.25);
+                    padding-bottom: 40px;
+                }
+
+                .section {
+                    padding-block: clamp(80px, 11vw, 150px);
+                }
+
+                .section+.section {
+                    border-top: 1px solid var(--line);
+                }
+
+                .section-head {
+                    text-align: center;
+                    max-width: 760px;
+                    margin: 0 auto clamp(48px, 6vw, 80px);
+                }
+
+                .eyebrow {
+                    display: inline-block;
+                    font-size: 0.8125rem;
+                    color: var(--ink-3);
+                    margin-bottom: 18px;
+                }
+
+                .section-head h2 {
+                    font-size: clamp(2.75rem, 1.6rem + 4vw, 5rem);
+                }
+
+                .section-head p {
+                    margin: 20px auto 0;
+                    max-width: 36em;
+                    color: var(--ink-2);
+                    font-size: 1.125rem;
+                }
+
+                /* Révélations au scroll */
+                [data-reveal] {
+                    opacity: 0;
+                    transform: translateY(32px);
+                    filter: blur(8px);
+                    transition: opacity 1s var(--ease), transform 1s var(--ease), filter 1s var(--ease);
+                    transition-delay: calc(var(--d, 0) * 90ms);
+                }
+
+                [data-reveal].in {
+                    opacity: 1;
+                    transform: none;
+                    filter: none;
+                }
+
+                .no-js [data-reveal] {
+                    opacity: 1;
+                    transform: none;
+                    filter: none;
+                }
+
+                /* Étapes */
+                .steps {
+                    list-style: none;
+                    margin: 0;
+                    padding: 0;
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    gap: 20px;
+                }
+
+                @media (max-width: 860px) {
+                    .steps {
+                        grid-template-columns: minmax(0, 1fr);
+                    }
+                }
+
+                .step {
+                    background: var(--card);
+                    border-radius: 28px;
+                    padding: 32px 30px 34px;
+                    border: 1px solid var(--line);
+                    display: flex;
+                    flex-direction: column;
+                    min-height: 300px;
+                }
+
+                .step-n {
+                    font-family: var(--serif);
+                    font-size: 4.5rem;
+                    line-height: 0.8;
+                    letter-spacing: -0.03em;
+                }
+
+                .step h3 {
+                    margin-top: auto;
+                    padding-top: 48px;
+                    font-size: 1.3125rem;
+                    font-weight: 600;
+                    letter-spacing: -0.015em;
+                    line-height: 1.2;
+                }
+
+                .step p {
+                    margin-top: 10px;
+                    color: var(--ink-2);
+                    font-size: 1rem;
+                }
+
+                /* Bento technique */
+                .bento {
+                    display: grid;
+                    grid-template-columns: repeat(6, minmax(0, 1fr));
+                    gap: 20px;
+                }
+
+                .tile {
+                    background: var(--card);
+                    border: 1px solid var(--line);
+                    border-radius: 28px;
+                    padding: 30px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 14px;
+                    min-height: 280px;
+                    position: relative;
+                    overflow: hidden;
+                }
+
+                .tile-a {
+                    grid-column: span 4;
+                }
+
+                .tile-b {
+                    grid-column: span 2;
+                }
+
+                .tile-c,
+                .tile-d,
+                .tile-e {
+                    grid-column: span 2;
+                }
+
+                @media (max-width: 960px) {
+
+                    .tile-a,
+                    .tile-b,
+                    .tile-c,
+                    .tile-d,
+                    .tile-e {
+                        grid-column: span 3;
+                    }
+
+                    .tile-a {
+                        grid-column: span 6;
+                    }
+                }
+
+                @media (max-width: 640px) {
+                    .bento>* {
+                        grid-column: 1 / -1 !important;
+                    }
+                }
+
+                .tile-fig {
+                    font-family: var(--serif);
+                    font-size: clamp(3.5rem, 2.5rem + 3vw, 5.5rem);
+                    line-height: 0.9;
+                    letter-spacing: -0.03em;
+                    font-variant-numeric: tabular-nums;
+                }
+
+                .tile-fig.mono {
+                    font-family: var(--mono);
+                    font-size: 1.5rem;
+                    letter-spacing: 0;
+                    line-height: 1.2;
+                }
+
+                .tile h3 {
+                    margin-top: auto;
+                    font-size: 1.1875rem;
+                    font-weight: 600;
+                    letter-spacing: -0.015em;
+                    line-height: 1.25;
+                }
+
+                .tile p {
+                    color: var(--ink-2);
+                    font-size: 0.9688rem;
+                    max-width: 34em;
+                }
+
+                .tile code.src {
+                    font-size: 0.75rem;
+                    color: var(--ink-3);
+                }
+
+                .tile-dark {
+                    background: #141414;
+                    color: #f4f3ef;
+                    border-color: #141414;
+                }
+
+                .tile-dark p {
+                    color: rgba(244, 243, 239, 0.72);
+                }
+
+                .tile-dark code.src {
+                    color: rgba(244, 243, 239, 0.55);
+                }
+
+                /* Graphe latence dans la tuile A */
+                .latency {
+                    display: flex;
+                    align-items: flex-end;
+                    gap: 6px;
+                    height: 72px;
+                    margin-top: 4px;
+                }
+
+                .latency i {
+                    flex: 1;
+                    border-radius: 4px 4px 2px 2px;
+                    background: rgba(244, 243, 239, 0.16);
+                    height: var(--h);
+                    transform-origin: bottom;
+                    transform: scaleY(0);
+                    transition: transform .9s var(--ease);
+                    transition-delay: calc(var(--n) * 30ms);
+                }
+
+                .latency i.us {
+                    background: #f4f3ef;
+                }
+
+                .in .latency i {
+                    transform: scaleY(1);
+                }
+
+                .legend {
+                    display: flex;
+                    gap: 18px;
+                    font-size: 0.8125rem;
+                    color: rgba(244, 243, 239, 0.6);
+                }
+
+                .legend b {
+                    font-weight: 500;
+                    color: #f4f3ef;
+                }
+
+                /* Comparatif */
+                .table-card {
+                    background: var(--card);
+                    border: 1px solid var(--line);
+                    border-radius: 28px;
+                    overflow-x: auto;
+                    overscroll-behavior-x: contain;
+                }
+
+                table {
+                    width: 100%;
+                    min-width: 720px;
+                    border-collapse: collapse;
+                    font-size: 0.9688rem;
+                }
+
+                th,
+                td {
+                    padding: 18px 22px;
+                    text-align: left;
+                    vertical-align: top;
+                }
+
+                thead th {
+                    font-weight: 500;
+                    color: var(--ink-3);
+                    font-size: 0.875rem;
+                    border-bottom: 1px solid var(--line);
+                }
+
+                thead th.us {
+                    color: var(--ink);
+                }
+
+                tbody th {
+                    font-weight: 500;
+                    width: 26%;
+                }
+
+                tbody tr+tr>* {
+                    border-top: 1px solid var(--line);
+                }
+
+                td {
+                    color: var(--ink-2);
+                    font-variant-numeric: tabular-nums;
+                }
+
+                .us {
+                    background: var(--paper);
+                }
+
+                td.us {
+                    color: var(--ink);
+                    font-weight: 500;
+                }
+
+                .table-note {
+                    margin-top: 16px;
+                    text-align: center;
+                    font-size: 0.875rem;
+                    color: var(--ink-3);
+                }
+
+                /* Téléchargements */
+                .dl-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 20px;
+                }
+
+                @media (max-width: 760px) {
+                    .dl-grid {
+                        grid-template-columns: minmax(0, 1fr);
+                    }
+                }
+
+                .dl {
+                    background: var(--card);
+                    border: 1px solid var(--line);
+                    border-radius: 28px;
+                    padding: 30px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 14px;
+                }
+
+                .dl.is-mine {
+                    box-shadow: 0 0 0 2px var(--ink);
+                }
+
+                .dl-top {
+                    display: flex;
+                    align-items: baseline;
+                    justify-content: space-between;
+                    gap: 12px;
+                }
+
+                .dl h3 {
+                    font-family: var(--serif);
+                    font-weight: 400;
+                    font-size: 2.5rem;
+                    line-height: 1;
+                    letter-spacing: -0.02em;
+                }
+
+                .dl-tag {
+                    font-size: 0.8125rem;
+                    color: var(--ink-3);
+                }
+
+                .dl p {
+                    color: var(--ink-2);
+                    font-size: 0.9688rem;
+                }
+
+                .dl code.file {
+                    font-size: 0.8125rem;
+                    color: var(--ink-3);
+                    overflow-wrap: anywhere;
+                }
+
+                .dl .btn {
+                    align-self: flex-start;
+                    margin-top: auto;
+                }
+
+                .dl-wide {
+                    grid-column: 1 / -1;
+                }
+
+                .term {
+                    position: relative;
+                    background: #141414;
+                    color: #e6e5e0;
+                    border-radius: 18px;
+                    padding: 18px 60px 18px 20px;
+                    font-family: var(--mono);
+                    font-size: 0.8125rem;
+                    line-height: 1.75;
+                    overflow-x: auto;
+                }
+
+                .term pre {
+                    margin: 0;
+                    font: inherit;
+                    white-space: pre;
+                }
+
+                .term .c,
+                .term .p {
+                    color: #8d8c87;
+                }
+
+                .term .p {
+                    user-select: none;
+                }
+
+                .copy {
+                    position: absolute;
+                    top: 8px;
+                    right: 8px;
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 12px;
+                    display: grid;
+                    place-items: center;
+                    border: 0;
+                    background: transparent;
+                    color: #a9a8a3;
+                    cursor: pointer;
+                }
+
+                .copy:hover {
+                    background: #262626;
+                    color: #fff;
+                }
+
+                .copy svg {
+                    width: 18px;
+                    height: 18px;
+                }
+
+                .copy:focus-visible {
+                    outline-color: #9db2ff;
+                    outline-offset: -2px;
+                }
+
+                .checksums {
+                    margin-top: 24px;
+                    text-align: center;
+                    font-size: 0.875rem;
+                    color: var(--ink-3);
+                }
+
+                /* ==================================================================
+           Finale — la vidéo se rouvre
+           ================================================================== */
+                .finale {
+                    position: relative;
+                    min-height: 100vh;
+                    min-height: 100svh;
+                    display: grid;
+                    grid-template-rows: 1fr auto;
+                    color: #fff;
+                    text-align: center;
+                    padding: 120px var(--gutter) 24px;
+                }
+
+                .finale-inner {
+                    align-self: center;
+                    justify-self: center;
+                    max-width: 900px;
+                }
+
+                .finale h2 {
+                    font-size: clamp(3.25rem, 1.6rem + 6vw, 7rem);
+                    text-shadow: 0 2px 40px rgba(0, 0, 0, 0.25);
+                }
+
+                .finale p {
+                    margin: 22px auto 0;
+                    max-width: 30em;
+                    color: rgba(255, 255, 255, 0.86);
+                    font-size: 1.125rem;
+                }
+
+                .finale .hero-actions {
+                    margin-top: 34px;
+                }
+
+                .site-footer {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 12px 24px;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 14px 14px 14px 22px;
+                    border-radius: 999px;
+                    background: var(--glass-dark-bg);
+                    border: 1px solid var(--glass-dark-line);
+                    backdrop-filter: blur(18px);
+                    -webkit-backdrop-filter: blur(18px);
+                    font-size: 0.8125rem;
+                    color: rgba(255, 255, 255, 0.82);
+                    text-align: left;
+                }
+
+                .site-footer nav {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 4px;
+                }
+
+                .site-footer nav a {
+                    display: inline-flex;
+                    align-items: center;
+                    min-height: 36px;
+                    padding: 0 12px;
+                    border-radius: 999px;
+                    text-decoration: none;
+                }
+
+                .site-footer nav a:hover {
+                    background: rgba(255, 255, 255, 0.12);
+                }
+
+                @media (max-width: 640px) {
+                    .site-footer {
+                        border-radius: 24px;
+                    }
+                }
+
+                /* Mouvement réduit --------------------------------------------------- */
+                @media (prefers-reduced-motion: reduce) {
+                    [data-reveal] {
+                        opacity: 1;
+                        transform: none;
+                        filter: none;
+                        transition: none;
+                    }
+
+                    .hero-inner,
+                    .captions p {
+                        filter: none !important;
+                    }
+
+                    .scroll-cue i {
+                        animation: none;
+                        transform: none;
+                    }
+
+                    .latency i {
+                        transform: none;
+                        transition: none;
+                    }
+
+                    .yt {
+                        transition: none;
+                    }
+                }
     </style>
 </head>
 
-<body>
+<body class="no-js">
     <a class="skip" href="#contenu">Aller au contenu</a>
 
-    <!-- Scènes des trois caméras : réutilisées en vignette et sur le moniteur Program -->
-    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-        <defs>
-            <!-- CAM 1 — plan serré, cadrage automatique sur le visage -->
-            <symbol id="scene-1" viewBox="0 0 160 90">
-                <rect width="160" height="90" fill="#4a5568" />
-                <rect x="0" y="0" width="34" height="90" fill="#424b5c" />
-                <rect x="118" y="20" width="30" height="3" fill="#5b6679" />
-                <rect x="122" y="10" width="5" height="10" fill="#8a6f5a" />
-                <rect x="129" y="13" width="4" height="7" fill="#6f8a73" />
-                <path d="M28 90 C32 67 55 61 80 61 C105 61 128 67 132 90 Z" fill="#1f2a3a" />
-                <path d="M70 61 L80 72 L90 61 Z" fill="#e7e2d8" />
-                <rect x="72" y="49" width="16" height="13" fill="#b4917b" />
-                <ellipse cx="80" cy="37" rx="17" ry="21" fill="#c9a690" />
-                <path
-                    d="M62.5 38 C61 20 71 13 81 13 C92 13 100 21 97.5 38 C95 28 89 23.5 80 23.5 C71 23.5 65 28 62.5 38 Z"
-                    fill="#2b2320" />
-                <g fill="none" stroke="#ffffff" stroke-opacity=".7" stroke-width="1">
-                    <path d="M56 18 V12 H62" />
-                    <path d="M98 12 H104 V18" />
-                    <path d="M56 56 V62 H62" />
-                    <path d="M98 62 H104 V56" />
-                </g>
-            </symbol>
-            <!-- CAM 2 — plan large du bureau -->
-            <symbol id="scene-2" viewBox="0 0 160 90">
-                <rect width="160" height="90" fill="#3a4556" />
-                <rect x="104" y="10" width="42" height="38" fill="#9fb2c4" />
-                <rect x="124" y="10" width="2" height="38" fill="#3a4556" />
-                <rect x="104" y="28" width="42" height="2" fill="#3a4556" />
-                <rect x="0" y="66" width="160" height="24" fill="#262b33" />
-                <rect x="18" y="62" width="124" height="5" fill="#7a604c" />
-                <rect x="24" y="67" width="4" height="23" fill="#5e4a3b" />
-                <rect x="132" y="67" width="4" height="23" fill="#5e4a3b" />
-                <rect x="27" y="50" width="9" height="12" fill="#8a5a3c" />
-                <ellipse cx="28" cy="45" rx="4" ry="7" fill="#527d57" transform="rotate(-20 28 45)" />
-                <ellipse cx="35" cy="44" rx="4" ry="8" fill="#5f8c63" transform="rotate(18 35 44)" />
-                <path d="M52 63 C53 53 58 48.5 66 48.5 C74 48.5 79 53 80 63 Z" fill="#1f2a3a" />
-                <circle cx="66" cy="39" r="8" fill="#c9a690" />
-                <path d="M58 39 C57.5 31 62 28 66 28 C71 28 75 31 74 39 C72.5 34.5 70 33 66 33 C62 33 59.5 34.5 58 39 Z"
-                    fill="#2b2320" />
-                <rect x="86" y="49" width="18" height="12" rx="1" fill="#1c2027" />
-                <rect x="88" y="51" width="14" height="8" fill="#5b7895" />
-                <rect x="82" y="61" width="26" height="2" fill="#a4a7ad" />
-            </symbol>
-            <!-- CAM 3 — plongée sur le plan de travail -->
-            <symbol id="scene-3" viewBox="0 0 160 90">
-                <rect width="160" height="90" fill="#6b5545" />
-                <rect width="160" height="90" fill="url(#grain)" opacity=".25" />
-                <g transform="rotate(-6 72 46)">
-                    <rect x="44" y="20" width="56" height="42" rx="2" fill="#ece8df" />
-                    <rect x="71.5" y="20" width="1" height="42" fill="#cfc9bd" />
-                    <g fill="#bdb6a8">
-                        <rect x="49" y="28" width="18" height="1.4" />
-                        <rect x="49" y="33" width="16" height="1.4" />
-                        <rect x="49" y="38" width="19" height="1.4" />
-                        <rect x="77" y="28" width="17" height="1.4" />
-                        <rect x="77" y="33" width="12" height="1.4" />
-                    </g>
-                    <rect x="78" y="38" width="15" height="12" fill="none" stroke="#c01d1f" stroke-width="1" />
-                </g>
-                <rect x="96" y="58" width="30" height="2.4" rx="1.2" fill="#1f2a3a" transform="rotate(-28 96 58)" />
-                <circle cx="128" cy="24" r="11" fill="#e3ddd2" />
-                <circle cx="128" cy="24" r="7.5" fill="#3b2a20" />
-                <ellipse cx="62" cy="74" rx="11" ry="7" fill="#c9a690" />
-                <ellipse cx="94" cy="72" rx="10" ry="7" fill="#c9a690" />
-                <rect x="52" y="78" width="20" height="12" fill="#1f2a3a" />
-                <rect x="85" y="76" width="18" height="14" fill="#1f2a3a" />
-            </symbol>
-            <pattern id="grain" width="6" height="6" patternUnits="userSpaceOnUse">
-                <rect width="6" height="1" fill="#000" />
-            </pattern>
-        </defs>
-    </svg>
-
-    <header class="site-header">
-        <div class="wrap">
-            <a class="wordmark" href="#" aria-label="OpenCam, accueil">
-                <span class="wordmark-lamp" aria-hidden="true"></span>OpenCam
-            </a>
-            <nav class="site-nav" aria-label="Navigation principale">
-                <a href="#fonctionnement">Fonctionnement</a>
-                <a href="#technique">Technique</a>
-                <a href="#comparatif">Comparatif</a>
-                <a href="https://github.com/Julien0ff/OpenCam">Code source</a>
-                <a class="btn btn-primary btn-sm" href="#telecharger">Télécharger</a>
-            </nav>
+    <!-- Fond vidéo immersif (décoratif) -->
+    <div class="stage" aria-hidden="true">
+        <div class="stage-media" id="stage-media">
+            <div class="stage-zoom" id="stage-zoom">
+                <video class="yt yt-hero" id="v-hero" src="assets/hero.mp4" autoplay muted loop playsinline preload="auto"></video>
+                <video class="yt yt-finale" id="v-finale" src="assets/finale.mp4" autoplay muted loop playsinline preload="auto"></video>
+            </div>
+            <div class="veil" id="veil"></div>
         </div>
+    </div>
+
+    <header class="site-nav" id="nav">
+        <a class="wordmark" href="#" aria-label="OpenCam, retour en haut">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.6" />
+                <circle cx="12" cy="12" r="4.2" fill="currentColor" />
+            </svg>
+            OpenCam
+        </a>
+        <nav class="nav-pill" aria-label="Navigation principale">
+            <a href="#fonctionnement">Fonctionnement</a>
+            <a href="#technique">Technique</a>
+            <a href="#comparatif">Comparatif</a>
+            <a href="https://github.com/Julien0ff/OpenCam">Code source</a>
+        </nav>
+        <a class="btn btn-sm nav-cta" href="#telecharger">Télécharger</a>
     </header>
 
     <main id="contenu">
+        <!-- 1. Hero ------------------------------------------------------------>
         <section class="hero" aria-labelledby="titre">
-            <div class="wrap">
-                <div>
-                    <h1 id="titre">Vos téléphones deviennent une régie vidéo.</h1>
-                    <p class="hero-lede">
-                        OpenCam transforme un ou plusieurs smartphones en webcams pour votre ordinateur.
-                        Passez de l’un à l’autre en un clic, comme dans un studio, et utilisez le résultat
-                        dans Zoom, OBS, Discord ou Teams.
-                    </p>
-                    <div class="hero-actions">
-                        <a class="btn btn-primary" id="cta" href="#telecharger">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14" />
-                            </svg>
-                            <span id="cta-label">Télécharger</span>
-                        </a>
-                        <a class="btn btn-quiet" href="#fonctionnement">Comment ça marche</a>
-                    </div>
-                    <p class="hero-meta">
-                        <span>Version 26.0</span><span>Libre et gratuit</span><span>Sans compte ni cloud</span>
-                    </p>
-                </div>
-
-                <figure class="rig" aria-labelledby="rig-caption">
-                    <div class="rig-bar" aria-hidden="true">
-                        <span class="onair"><span class="lamp"></span>On air</span>
-                        <span class="rig-title">OpenCam Studio</span>
-                        <span class="rig-tc" id="tc">00:12:43</span>
-                    </div>
-
-                    <div class="pgm">
-                        <svg viewBox="0 0 160 90" role="img" aria-labelledby="pgm-name">
-                            <use id="pgm-use" href="#scene-2" />
+            <div class="hero-inner">
+                <span class="chip"><span class="chip-dot" aria-hidden="true"></span>Libre, gratuit, sans compte</span>
+                <h1 id="titre">Vos téléphones, <em>une vraie régie vidéo.</em></h1>
+                <p class="hero-lede">
+                    OpenCam transforme vos smartphones en webcams pour Zoom, OBS ou Discord.
+                    Branchez-en plusieurs et passez de l’un à l’autre en un clic.
+                </p>
+                <div class="hero-actions">
+                    <a class="btn btn-white" id="cta" href="#telecharger">
+                        <span id="cta-label">Télécharger</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 5v12m0 0-5-5m5 5 5-5" />
                         </svg>
-                        <span class="tag tag-name"><b>PGM</b> <span id="pgm-name">Cam 2 · Plan large</span></span>
-                        <span class="tag tag-out" aria-hidden="true">→ /dev/video10</span>
-                    </div>
-
-                    <div class="bus" role="group" aria-label="Caméras disponibles">
-                        <button class="cam" type="button" data-cam="1" aria-pressed="false" aria-keyshortcuts="1">
-                            <span class="cam-view">
-                                <svg viewBox="0 0 160 90" aria-hidden="true">
-                                    <use href="#scene-1" />
-                                </svg>
-                                <span class="tag"></span>
-                            </span>
-                            <span class="cam-label"><kbd>1</kbd><span>Pixel 8 · Visage</span></span>
-                        </button>
-                        <button class="cam" type="button" data-cam="2" aria-pressed="true" aria-keyshortcuts="2"
-                            data-state="pgm">
-                            <span class="cam-view">
-                                <svg viewBox="0 0 160 90" aria-hidden="true">
-                                    <use href="#scene-2" />
-                                </svg>
-                                <span class="tag">PGM</span>
-                            </span>
-                            <span class="cam-label"><kbd>2</kbd><span>iPhone 13 · Large</span></span>
-                        </button>
-                        <button class="cam" type="button" data-cam="3" aria-pressed="false" aria-keyshortcuts="3">
-                            <span class="cam-view">
-                                <svg viewBox="0 0 160 90" aria-hidden="true">
-                                    <use href="#scene-3" />
-                                </svg>
-                                <span class="tag"></span>
-                            </span>
-                            <span class="cam-label"><kbd>3</kbd><span>Galaxy S21 · Plongée</span></span>
-                        </button>
-                    </div>
-
-                    <figcaption class="rig-caption" id="rig-caption">
-                        Démonstration&nbsp;: cliquez une caméra, ou tapez 1, 2 ou 3, pour la mettre à l’antenne.
-                        En rouge ce qui est diffusé, en vert la caméra précédente, prête à revenir.
-                    </figcaption>
-                    <p class="sr-only" aria-live="polite" id="rig-status"></p>
-                </figure>
+                    </a>
+                    <a class="btn btn-glass" href="#scene">
+                        <span class="btn-play" aria-hidden="true"><svg viewBox="0 0 10 10">
+                                <path d="M2 1l7 4-7 4z" fill="currentColor" />
+                            </svg></span>
+                        Voir comment
+                    </a>
+                </div>
+            </div>
+            <div class="hero-foot">
+                <p>Version 26.0<br>Windows · Linux · Android</p>
+                <div class="scroll-cue" aria-hidden="true"><span>Faites défiler</span><i></i></div>
+                <button class="media-toggle" type="button" aria-label="Mettre la vidéo de fond en pause"
+                    data-media-toggle>
+                    <svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true">
+                        <rect x="2" y="1" width="3.5" height="12" rx="1" fill="currentColor" />
+                        <rect x="8.5" y="1" width="3.5" height="12" rx="1" fill="currentColor" />
+                    </svg>
+                    <svg class="i-play" viewBox="0 0 14 14" aria-hidden="true">
+                        <path d="M3 1.5l9.5 5.5L3 12.5z" fill="currentColor" />
+                    </svg>
+                </button>
             </div>
         </section>
 
-        <section class="section" id="fonctionnement" aria-labelledby="fonctionnement-titre">
-            <div class="wrap">
-                <div class="section-head">
-                    <h2 id="fonctionnement-titre">Trois étapes, aucun compte.</h2>
-                    <p>Tout se passe sur votre réseau local. Rien ne transite par un serveur tiers.</p>
+        <!-- 2. Scène : l’écran devient une fenêtre --------------------------->
+        <section class="scene" id="scene" aria-label="Comment OpenCam fonctionne, en trois temps">
+            <div class="scene-sticky">
+                <div class="window" aria-hidden="true">
+                    <div class="finder"><span></span><span></span><span></span><span></span></div>
+
+                    <div class="glass-card gc-1" data-card="0">
+                        <div class="gc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.7" stroke-linecap="round">
+                                <path
+                                    d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" />
+                                <circle cx="12" cy="11" r="3" />
+                                <path d="M7.5 17.5c1-2 2.6-3 4.5-3s3.5 1 4.5 3" />
+                            </svg></div>
+                        <strong>Le cadrage vous suit</strong>
+                        <p>Recadre et zoome quand vous bougez.</p>
+                    </div>
+
+                    <div class="glass-card gc-2" data-card="1">
+                        <div class="big">&lt;&nbsp;20&nbsp;ms</div>
+                        <p>de latence en Wi-Fi 5&nbsp;GHz. L’image reste à l’heure.</p>
+                    </div>
+
+                    <div class="glass-card gc-3" data-card="2">
+                        <div class="phones">
+                            <span style="background-image:url(assets/poster.jpg)"></span>
+                            <span style="background:#c9c3b8"></span>
+                            <span style="background:#8e9aa6"></span>
+                        </div>
+                        <strong>3 téléphones connectés</strong>
+                        <p>Découverts tout seuls sur votre Wi-Fi.</p>
+                    </div>
+
+                    <div class="glass-card gc-4" data-card="3">
+                        <span class="gc-live"><i></i>Caméra 2 en direct</span>
+                        <strong>Reconnu comme une webcam</strong>
+                        <div class="apps">
+                            <span>Zoom</span><span>Meet</span><span>OBS</span><span>Discord</span><span>Teams</span>
+                        </div>
+                    </div>
                 </div>
-                <ol class="steps">
-                    <li>
-                        <h3>Installez la régie</h3>
-                        <p>OpenCam Studio tourne sous Windows et Linux. C’est là que vous voyez toutes vos caméras et
-                            choisissez celle qui part à l’antenne.</p>
-                    </li>
-                    <li>
-                        <h3>Ouvrez OpenCam sur vos téléphones</h3>
-                        <p>Sur le même Wi-Fi, ils apparaissent tout seuls dans la régie grâce à la découverte réseau
-                            (mDNS). Rien à saisir.</p>
-                    </li>
-                    <li>
-                        <h3>Choisissez «&nbsp;OpenCam&nbsp;» comme caméra</h3>
-                        <p>Dans Zoom, Meet, OBS ou Discord, OpenCam se présente comme une webcam ordinaire. Vos
-                            interlocuteurs voient ce que vous mettez à l’antenne.</p>
-                    </li>
-                </ol>
+
+                <div class="captions">
+                    <p data-cap="0">Posez votre téléphone.</p>
+                    <p data-cap="1">Il devient <em>la webcam de votre ordinateur.</em></p>
+                    <p data-cap="2">Ajoutez-en d’autres. <em>Passez de l’un à l’autre.</em></p>
+                </div>
+
+                <div class="scene-count" aria-hidden="true"><span id="scene-n">1</span> / 3</div>
+                <div class="scene-bar" aria-hidden="true"><i></i></div>
             </div>
         </section>
 
-        <section class="section" id="technique" aria-labelledby="technique-titre">
-            <div class="wrap">
-                <div class="section-head">
-                    <h2 id="technique-titre">Pensé pour le direct.</h2>
-                    <p>Chaque choix technique sert la même idée&nbsp;: l’image doit rester à l’heure.</p>
+        <!-- 3. Feuille papier ---------------------------------------------------->
+        <div class="sheet" id="sheet">
+            <section class="section" id="fonctionnement" aria-labelledby="fonctionnement-titre">
+                <div class="wrap">
+                    <div class="section-head">
+                        <span class="eyebrow" data-reveal>Fonctionnement</span>
+                        <h2 id="fonctionnement-titre" data-reveal style="--d:1">Trois étapes, <em>aucun compte.</em>
+                        </h2>
+                        <p data-reveal style="--d:2">Tout se passe sur votre réseau local. Rien ne transite par un
+                            serveur tiers.</p>
+                    </div>
+                    <ol class="steps">
+                        <li class="step" data-reveal style="--d:0">
+                            <span class="step-n" aria-hidden="true">1</span>
+                            <h3>Installez la régie</h3>
+                            <p>OpenCam Studio tourne sous Windows et Linux. C’est là que vous voyez vos caméras et
+                                choisissez celle qui est diffusée.</p>
+                        </li>
+                        <li class="step" data-reveal style="--d:1">
+                            <span class="step-n" aria-hidden="true">2</span>
+                            <h3>Ouvrez OpenCam sur vos téléphones</h3>
+                            <p>Sur le même Wi-Fi, ils apparaissent tout seuls dans la régie. Rien à saisir, aucune
+                                adresse IP à recopier.</p>
+                        </li>
+                        <li class="step" data-reveal style="--d:2">
+                            <span class="step-n" aria-hidden="true">3</span>
+                            <h3>Choisissez «&nbsp;OpenCam&nbsp;» comme caméra</h3>
+                            <p>Dans Zoom, Meet, OBS ou Discord, OpenCam se présente comme une webcam ordinaire.</p>
+                        </li>
+                    </ol>
                 </div>
-                <div class="spec">
-                    <div class="spec-row">
-                        <div class="spec-figure">&lt;&nbsp;20&nbsp;ms</div>
-                        <div class="spec-body">
+            </section>
+
+            <section class="section" id="technique" aria-labelledby="technique-titre">
+                <div class="wrap">
+                    <div class="section-head">
+                        <span class="eyebrow" data-reveal>Technique</span>
+                        <h2 id="technique-titre" data-reveal style="--d:1">Pensé pour <em>le direct.</em></h2>
+                        <p data-reveal style="--d:2">Chaque choix technique sert la même idée&nbsp;: l’image doit rester
+                            à l’heure.</p>
+                    </div>
+                    <div class="bento">
+                        <article class="tile tile-a tile-dark" data-reveal>
+                            <div class="tile-fig">&lt;&nbsp;20&nbsp;ms</div>
+                            <div class="latency" aria-hidden="true">
+                                <i class="us" style="--h:12%;--n:0"></i><i class="us" style="--h:14%;--n:1"></i><i
+                                    class="us" style="--h:11%;--n:2"></i><i class="us" style="--h:13%;--n:3"></i>
+                                <i style="--h:46%;--n:4"></i><i style="--h:60%;--n:5"></i><i
+                                    style="--h:100%;--n:6"></i><i style="--h:72%;--n:7"></i>
+                                <i style="--h:34%;--n:8"></i><i style="--h:52%;--n:9"></i><i
+                                    style="--h:40%;--n:10"></i><i style="--h:66%;--n:11"></i>
+                            </div>
+                            <div class="legend" aria-hidden="true"><span><b>OpenCam</b>
+                                    &lt;&nbsp;20&nbsp;ms</span><span>Alternatives 40–150&nbsp;ms</span></div>
                             <h3>Une image en retard est jetée, pas attendue</h3>
-                            <p>La vidéo voyage en UDP. Quand une image arrive trop tard, elle est abandonnée au lieu de
-                                bloquer les suivantes&nbsp;: pas de gel suivi d’une accélération, comme avec les flux
-                                TCP (RTMP, RTSP). Mesuré en Wi-Fi 5&nbsp;GHz.</p>
-                        </div>
-                        <code class="spec-src">core-protocol/src/packet.rs</code>
-                    </div>
-                    <div class="spec-row">
-                        <div class="spec-figure">Auto</div>
-                        <div class="spec-body">
+                            <p>La vidéo voyage en UDP. Une image arrivée trop tard est abandonnée au lieu de bloquer les
+                                suivantes&nbsp;: pas de gel suivi d’une accélération comme avec les flux TCP.</p>
+                            <code class="src">core-protocol/src/packet.rs</code>
+                        </article>
+                        <article class="tile tile-b" data-reveal style="--d:1">
+                            <div class="tile-fig">Auto</div>
                             <h3>Cadrage qui vous suit</h3>
-                            <p>La régie repère votre visage et recadre en douceur. Si vous reculez, elle zoome pour
-                                garder le même plan&nbsp;: visage, buste ou plan large. L’amorti du mouvement se règle.
-                            </p>
-                        </div>
-                        <code class="spec-src">camera-capture/src/face_tracking.rs</code>
-                    </div>
-                    <div class="spec-row">
-                        <div class="spec-figure">1–10×</div>
-                        <div class="spec-body">
-                            <h3>Le téléphone se pilote depuis l’ordinateur</h3>
-                            <p>Objectif avant, arrière ou ultra grand-angle, zoom, miroir, rotation et torche&nbsp;:
-                                tout se règle depuis la régie, sans toucher au téléphone posé sur son trépied.</p>
-                        </div>
-                        <code class="spec-src">core-protocol (canal RPC)</code>
-                    </div>
-                    <div class="spec-row">
-                        <div class="spec-figure mono" style="font-size:1.25rem">/dev/video10</div>
-                        <div class="spec-body">
+                            <p>Si vous reculez, la régie zoome pour garder le même plan&nbsp;: visage, buste ou plan
+                                large.</p>
+                            <code class="src">camera-capture/src/face_tracking.rs</code>
+                        </article>
+                        <article class="tile tile-c" data-reveal>
+                            <div class="tile-fig">1–10×</div>
+                            <h3>Le téléphone se pilote à distance</h3>
+                            <p>Objectif, zoom, miroir, rotation et torche se règlent depuis l’ordinateur.</p>
+                        </article>
+                        <article class="tile tile-d" data-reveal style="--d:1">
+                            <div class="tile-fig mono">/dev/video10</div>
                             <h3>Une vraie webcam pour le système</h3>
-                            <p>Sous Linux, l’image est convertie en YUYV 4:2:2 et écrite directement dans un
-                                périphérique <code>v4l2loopback</code>. Sous Windows, elle passe par la caméra virtuelle
-                                de Media Foundation.</p>
-                        </div>
-                        <code class="spec-src">vcam-sink/src/linux.rs</code>
-                    </div>
-                    <div class="spec-row">
-                        <div class="spec-figure">100&nbsp;% Rust</div>
-                        <div class="spec-body">
-                            <h3>Natif de bout en bout</h3>
-                            <p>Ni Flutter, ni React Native, ni Electron. Android utilise Camera2 et l’encodeur matériel
-                                via le NDK, iOS AVFoundation. Le téléphone chauffe moins et tient plus longtemps.</p>
-                        </div>
-                        <code class="spec-src">camera-capture/src/android.rs</code>
+                            <p><code>v4l2loopback</code> sous Linux, caméra virtuelle Media Foundation sous Windows.</p>
+                            <code class="src">vcam-sink/src/linux.rs</code>
+                        </article>
+                        <article class="tile tile-e" data-reveal style="--d:2">
+                            <div class="tile-fig">100&nbsp;%</div>
+                            <h3>Rust, natif de bout en bout</h3>
+                            <p>Ni Flutter, ni Electron. Encodage matériel sur le téléphone, qui chauffe moins.</p>
+                        </article>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <section class="section" id="comparatif" aria-labelledby="comparatif-titre">
-            <div class="wrap">
-                <div class="section-head">
-                    <h2 id="comparatif-titre">Face aux alternatives.</h2>
-                    <p>iVCam, Camo et DroidCam font bien une chose&nbsp;: une caméra. OpenCam en gère plusieurs.</p>
+            <section class="section" id="comparatif" aria-labelledby="comparatif-titre">
+                <div class="wrap">
+                    <div class="section-head">
+                        <span class="eyebrow" data-reveal>Comparatif</span>
+                        <h2 id="comparatif-titre" data-reveal style="--d:1">Une caméra, <em>c’est bien.</em> Plusieurs,
+                            c’est mieux.</h2>
+                    </div>
+                    <div class="table-card" role="region" aria-labelledby="comparatif-titre" tabindex="0" data-reveal
+                        style="--d:2">
+                        <table>
+                            <caption class="sr-only">Comparaison d’OpenCam avec iVCam, Camo Studio et DroidCam</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col"><span class="sr-only">Critère</span></th>
+                                    <th scope="col" class="us">OpenCam</th>
+                                    <th scope="col">iVCam</th>
+                                    <th scope="col">Camo Studio</th>
+                                    <th scope="col">DroidCam</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th scope="row">Plusieurs caméras, commutation</th>
+                                    <td class="us">Oui, en un clic</td>
+                                    <td>Non</td>
+                                    <td>Basique</td>
+                                    <td>Non</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Cadrage automatique</th>
+                                    <td class="us">Inclus</td>
+                                    <td>Non</td>
+                                    <td>Version payante</td>
+                                    <td>Non</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Zoom selon la distance</th>
+                                    <td class="us">Oui, en temps réel</td>
+                                    <td>Non</td>
+                                    <td>Limité</td>
+                                    <td>Non</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Latence en Wi-Fi 5&nbsp;GHz</th>
+                                    <td class="us">&lt;&nbsp;20&nbsp;ms</td>
+                                    <td>60–150&nbsp;ms</td>
+                                    <td>40–80&nbsp;ms</td>
+                                    <td>80–120&nbsp;ms</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Mémoire utilisée</th>
+                                    <td class="us">~30&nbsp;Mo</td>
+                                    <td>~80&nbsp;Mo</td>
+                                    <td>~250&nbsp;Mo</td>
+                                    <td>~60&nbsp;Mo</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Modèle</th>
+                                    <td class="us">Libre (MIT ou Apache&nbsp;2.0)</td>
+                                    <td>Propriétaire, filigrane</td>
+                                    <td>Abonnement</td>
+                                    <td>Propriétaire, publicités</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="table-note">Versions gratuites. Latence et mémoire&nbsp;: ordres de grandeur sur réseau
+                        local.</p>
                 </div>
-                <div class="table-wrap" role="region" aria-labelledby="comparatif-titre" tabindex="0">
-                    <table>
-                        <caption class="sr-only">Comparaison d’OpenCam avec iVCam, Camo Studio et DroidCam</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col"><span class="sr-only">Critère</span></th>
-                                <th scope="col" class="col-us">OpenCam</th>
-                                <th scope="col">iVCam</th>
-                                <th scope="col">Camo Studio</th>
-                                <th scope="col">DroidCam</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <th scope="row">Plusieurs caméras, commutation</th>
-                                <td class="col-us">Oui, en un clic</td>
-                                <td>Non</td>
-                                <td>Basique</td>
-                                <td>Non</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Cadrage automatique</th>
-                                <td class="col-us">Inclus</td>
-                                <td>Non</td>
-                                <td>Version payante</td>
-                                <td>Non</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Zoom selon la distance</th>
-                                <td class="col-us">Oui, en temps réel</td>
-                                <td>Non</td>
-                                <td>Limité</td>
-                                <td>Non</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Transport vidéo</th>
-                                <td class="col-us">UDP, images en retard jetées</td>
-                                <td>TCP</td>
-                                <td>Propriétaire (USB, Wi-Fi)</td>
-                                <td>HTTP / TCP</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Latence en Wi-Fi 5&nbsp;GHz</th>
-                                <td class="col-us">&lt;&nbsp;20&nbsp;ms</td>
-                                <td>60–150&nbsp;ms</td>
-                                <td>40–80&nbsp;ms</td>
-                                <td>80–120&nbsp;ms</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Mémoire utilisée</th>
-                                <td class="col-us">~30&nbsp;Mo</td>
-                                <td>~80&nbsp;Mo</td>
-                                <td>~250&nbsp;Mo</td>
-                                <td>~60&nbsp;Mo</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Modèle</th>
-                                <td class="col-us">Libre (MIT ou Apache&nbsp;2.0)</td>
-                                <td>Propriétaire, filigrane</td>
-                                <td>Abonnement</td>
-                                <td>Propriétaire, publicités</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <p class="table-note">Version gratuite de chaque logiciel. Latence et mémoire&nbsp;: ordres de grandeur
-                    sur réseau local.</p>
-            </div>
-        </section>
+            </section>
 
-        <section class="section" id="telecharger" aria-labelledby="telecharger-titre">
-            <div class="wrap">
-                <div class="section-head">
-                    <h2 id="telecharger-titre">Télécharger OpenCam&nbsp;26.0</h2>
-                    <p>La régie s’installe sur l’ordinateur, le transmetteur sur chaque téléphone.</p>
-                </div>
-
-                <div class="dl">
-                    <div class="dl-row">
-                        <h3>Windows <small>Régie · x86_64</small></h3>
-                        <div class="dl-info">
+            <section class="section" id="telecharger" aria-labelledby="telecharger-titre">
+                <div class="wrap">
+                    <div class="section-head">
+                        <span class="eyebrow" data-reveal>Version 26.0</span>
+                        <h2 id="telecharger-titre" data-reveal style="--d:1">Télécharger <em>OpenCam.</em></h2>
+                        <p data-reveal style="--d:2">La régie s’installe sur l’ordinateur, le transmetteur sur chaque
+                            téléphone.</p>
+                    </div>
+                    <div class="dl-grid">
+                        <article class="dl" data-os="windows" data-reveal>
+                            <div class="dl-top">
+                                <h3>Windows</h3><span class="dl-tag">Régie · x86_64</span>
+                            </div>
                             <p>Exécutable autonome, rien à installer.</p>
-                            <p><code>opencam-studio-windows-x86_64.exe</code></p>
-                        </div>
-                        <a class="btn btn-primary btn-sm"
-                            href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-studio-windows-x86_64.exe">Télécharger</a>
-                    </div>
-
-                    <div class="dl-row">
-                        <h3>Linux <small>Régie · x86_64</small></h3>
-                        <div class="dl-info">
+                            <code class="file">opencam-studio-windows-x86_64.exe</code>
+                            <a class="btn btn-ink btn-sm"
+                                href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-studio-windows-x86_64.exe">Télécharger
+                                pour Windows</a>
+                        </article>
+                        <article class="dl" data-os="linux" data-reveal style="--d:1">
+                            <div class="dl-top">
+                                <h3>Linux</h3><span class="dl-tag">Régie · x86_64</span>
+                            </div>
                             <p>Nécessite le module noyau <code>v4l2loopback</code>.</p>
-                            <p><code>opencam-desktop-linux-x86_64.tar.gz</code></p>
-                        </div>
-                        <a class="btn btn-primary btn-sm"
-                            href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-desktop-linux-x86_64.tar.gz">Télécharger</a>
-                        <div class="dl-extra">
+                            <code class="file">opencam-desktop-linux-x86_64.tar.gz</code>
+                            <a class="btn btn-ink btn-sm"
+                                href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-desktop-linux-x86_64.tar.gz">Télécharger
+                                pour Linux</a>
+                        </article>
+                        <article class="dl" data-os="android" data-reveal>
+                            <div class="dl-top">
+                                <h3>Android</h3><span class="dl-tag">Transmetteur · ARM64</span>
+                            </div>
+                            <p>Bibliothèques natives à intégrer. L’APK installable arrive bientôt.</p>
+                            <code class="file">opencam-mobile-android-arm64.zip</code>
+                            <a class="btn btn-line btn-sm"
+                                href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-mobile-android-arm64.zip">Télécharger
+                                l’archive</a>
+                        </article>
+                        <article class="dl" data-os="ios" data-reveal style="--d:1">
+                            <div class="dl-top">
+                                <h3>iOS</h3><span class="dl-tag">Transmetteur</span>
+                            </div>
+                            <p>Pas encore de version prête à installer. Compilation depuis les sources avec
+                                <code>cargo-apple</code>.
+                            </p>
+                            <a class="btn btn-line btn-sm" href="https://github.com/Julien0ff/OpenCam#readme">Lire le
+                                guide</a>
+                        </article>
+                        <div class="dl-wide" data-reveal>
                             <div class="term">
-                                <pre id="cmd-linux"><span class="c"># Créer la caméra virtuelle /dev/video10</span>
+                                <pre id="cmd-linux"><span class="c"># Linux : créer la caméra virtuelle /dev/video10</span>
 <span class="p">$ </span>sudo modprobe v4l2loopback video_nr=10 card_label="OpenCam" exclusive_caps=1
 
 <span class="c"># Ou compiler depuis les sources</span>
@@ -1340,131 +1789,208 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="dl-row">
-                        <h3>Android <small>Transmetteur · ARM64</small></h3>
-                        <div class="dl-info">
-                            <p>Bibliothèques natives à intégrer, l’APK installable arrive bientôt.</p>
-                            <p><code>opencam-mobile-android-arm64.zip</code></p>
-                        </div>
-                        <a class="btn btn-quiet btn-sm"
-                            href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-mobile-android-arm64.zip">Télécharger
-                            l’archive</a>
-                    </div>
-
-                    <div class="dl-row">
-                        <h3>iOS <small>Transmetteur</small></h3>
-                        <div class="dl-info">
-                            <p>Pas encore de version prête à installer. Compilation depuis les sources avec
-                                <code>cargo-apple</code>.</p>
-                        </div>
-                        <a class="btn btn-quiet btn-sm" href="https://github.com/Julien0ff/OpenCam#readme">Lire le
-                            guide</a>
-                    </div>
+                    <p class="checksums">
+                        Empreintes SHA-256 dans <a
+                            href="https://github.com/Julien0ff/OpenCam/releases/latest/download/SHA256SUMS.txt"><code>SHA256SUMS.txt</code></a>.
+                        Toutes les versions sur <a href="https://github.com/Julien0ff/OpenCam/releases">GitHub</a>.
+                    </p>
                 </div>
+            </section>
+        </div>
 
-                <p class="checksums">
-                    Empreintes SHA-256 dans <a
-                        href="https://github.com/Julien0ff/OpenCam/releases/latest/download/SHA256SUMS.txt"><code>SHA256SUMS.txt</code></a>.
-                    Toutes les versions sur <a href="https://github.com/Julien0ff/OpenCam/releases">GitHub</a>.
-                </p>
+        <!-- 4. Finale ------------------------------------------------------------>
+        <section class="finale" id="finale" aria-labelledby="finale-titre">
+            <div class="finale-inner">
+                <h2 id="finale-titre" data-reveal>Silence, <em>on tourne.</em></h2>
+                <p data-reveal style="--d:1">Installez la régie, ouvrez l’app sur votre téléphone. Vous êtes en direct
+                    dans deux minutes.</p>
+                <div class="hero-actions" data-reveal style="--d:2">
+                    <a class="btn btn-white" id="cta-2" href="#telecharger">Télécharger OpenCam</a>
+                    <a class="btn btn-glass" href="https://github.com/Julien0ff/OpenCam">Voir le code source</a>
+                </div>
             </div>
+            <footer class="site-footer">
+                <p>OpenCam, logiciel libre sous licence MIT ou Apache&nbsp;2.0.</p>
+                <nav aria-label="Liens du projet">
+                    <a href="https://github.com/Julien0ff/OpenCam">Code source</a>
+                    <a href="https://github.com/Julien0ff/OpenCam/releases">Versions</a>
+                    <a href="https://github.com/Julien0ff/OpenCam/actions">Intégration continue</a>
+                </nav>
+                <button class="media-toggle" type="button" aria-label="Mettre la vidéo de fond en pause"
+                    data-media-toggle>
+                    <svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true">
+                        <rect x="2" y="1" width="3.5" height="12" rx="1" fill="currentColor" />
+                        <rect x="8.5" y="1" width="3.5" height="12" rx="1" fill="currentColor" />
+                    </svg>
+                    <svg class="i-play" viewBox="0 0 14 14" aria-hidden="true">
+                        <path d="M3 1.5l9.5 5.5L3 12.5z" fill="currentColor" />
+                    </svg>
+                </button>
+            </footer>
         </section>
     </main>
 
-    <footer class="site-footer">
-        <div class="wrap">
-            <p>OpenCam est un logiciel libre, sous licence MIT ou Apache&nbsp;2.0.</p>
-            <nav aria-label="Liens du projet">
-                <a href="https://github.com/Julien0ff/OpenCam">Code source</a>
-                <a href="https://github.com/Julien0ff/OpenCam/releases">Versions</a>
-                <a href="https://github.com/Julien0ff/OpenCam/actions">Intégration continue</a>
-            </nav>
-        </div>
-    </footer>
+    <p class="sr-only" aria-live="polite" id="status"></p>
 
     <script>
         (() => {
+            document.body.classList.remove("no-js");
+
             const REPO = "https://github.com/Julien0ff/OpenCam";
+            const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-            /* Bouton principal adapté au système ---------------------------------- */
-            const ua = navigator.userAgent;
-            const cta = document.getElementById("cta");
-            const ctaLabel = document.getElementById("cta-label");
-            if (/Windows/i.test(ua)) {
-                cta.href = `${REPO}/releases/latest/download/opencam-studio-windows-x86_64.exe`;
-                ctaLabel.textContent = "Télécharger pour Windows";
-            } else if (/Linux/i.test(ua) && !/Android/i.test(ua)) {
-                cta.href = `${REPO}/releases/latest/download/opencam-desktop-linux-x86_64.tar.gz`;
-                ctaLabel.textContent = "Télécharger pour Linux";
-            }
+            const $ = (s, el = document) => el.querySelector(s);
+            const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+            const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+            const lerp = (a, b, t) => a + (b - a) * t;
+            const ease = (t) => 1 - Math.pow(1 - t, 3);
+            const status = $("#status");
 
-            /* Démonstration de la régie ------------------------------------------- */
-            const CAMS = {
-                1: "Cam 1 · Visage",
-                2: "Cam 2 · Plan large",
-                3: "Cam 3 · Plongée",
-            };
-            const buttons = [...document.querySelectorAll(".cam")];
-            const pgmUse = document.getElementById("pgm-use");
-            const pgmName = document.getElementById("pgm-name");
-            const status = document.getElementById("rig-status");
-            let pgm = 2;
-            let pvw = 1;
+            const vHero = $("#v-hero");
+            const vFinale = $("#v-finale");
+            let paused = reduceMotion;
 
-            function render() {
-                for (const b of buttons) {
-                    const n = Number(b.dataset.cam);
-                    const state = n === pgm ? "pgm" : n === pvw ? "pvw" : "";
-                    b.dataset.state = state;
-                    b.setAttribute("aria-pressed", String(n === pgm));
-                    b.querySelector(".tag").textContent = state.toUpperCase();
+            function setPaused(p) {
+                paused = p;
+                document.body.classList.toggle("is-paused", p);
+                $$("[data-media-toggle]").forEach((b) =>
+                    b.setAttribute("aria-label", p ? "Lire la vidéo de fond" : "Mettre la vidéo de fond en pause"));
+                if (p) {
+                    vHero?.pause();
+                    vFinale?.pause();
+                } else {
+                    vHero?.play().catch(() => {});
+                    vFinale?.play().catch(() => {});
                 }
-                pgmUse.setAttribute("href", `#scene-${pgm}`);
-                pgmName.textContent = CAMS[pgm];
             }
 
-            function cut(n) {
-                if (n === pgm || !CAMS[n]) return;
-                pvw = pgm;
-                pgm = n;
-                render();
-                status.textContent = `${CAMS[n]} à l’antenne`;
+            $$("[data-media-toggle]").forEach((b) => b.addEventListener("click", () => setPaused(!paused)));
+            if (!paused) {
+                vHero?.play().catch(() => {});
+                vFinale?.play().catch(() => {});
             }
 
-            buttons.forEach((b) => b.addEventListener("click", () => cut(Number(b.dataset.cam))));
-            document.addEventListener("keydown", (e) => {
-                if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
-                if (e.target.closest("input, textarea, select, [contenteditable]")) return;
-                if (e.key === "1" || e.key === "2" || e.key === "3") cut(Number(e.key));
-            });
-            render();
+            /* Bouton principal adapté au système ------------------------------- */
+            const ua = navigator.userAgent;
+            const os = /Windows/i.test(ua) ? "windows" : /Android/i.test(ua) ? "android" : /iPhone|iPad/i.test(ua) ? "ios" : /Linux/i.test(ua) ? "linux" : null;
+            const files = { windows: "opencam-studio-windows-x86_64.exe", linux: "opencam-desktop-linux-x86_64.tar.gz" };
+            if (files[os]) {
+                $("#cta").href = `${REPO}/releases/latest/download/${files[os]}`;
+                $("#cta-label").textContent = `Télécharger pour ${os === "windows" ? "Windows" : "Linux"}`;
+            }
+            if (os) $(`.dl[data-os="${os}"]`)?.classList.add("is-mine");
 
-            /* Timecode -------------------------------------------------------------- */
-            const tc = document.getElementById("tc");
-            const start = Date.now() - (12 * 60 + 43) * 1000;
-            const pad = (v) => String(v).padStart(2, "0");
-            setInterval(() => {
-                const s = Math.floor((Date.now() - start) / 1000);
-                tc.textContent = `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
-            }, 1000);
+            /* Moteur de scroll ------------------------------------------------- */
+            const root = document.documentElement;
+            const media = $("#stage-media");
+            const zoom = $("#stage-zoom");
+            const veil = $("#veil");
+            const nav = $("#nav");
+            const scene = $("#scene");
+            const sceneSticky = $(".scene-sticky");
+            const sheet = $("#sheet");
+            const finale = $("#finale");
+            const cards = $$("[data-card]");
+            const caps = $$("[data-cap]");
+            const sceneN = $("#scene-n");
 
-            /* Copier les commandes -------------------------------------------------- */
-            document.querySelectorAll("[data-copy]").forEach((btn) => {
+            let vw = 0, vh = 0, win = null, sceneTop = 0, sceneLen = 1, finaleTop = 0, lastCap = -1;
+
+            function measure() {
+                vw = innerWidth; vh = innerHeight;
+                const mobile = vw < 760;
+                let w, h;
+                if (mobile) { w = vw * 0.86; h = Math.min(vh * 0.5, w * 1.2); }
+                else { w = Math.min(vw * 0.56, vh * 0.56 * 16 / 9); h = w * 9 / 16; }
+                const x = (vw - w) / 2;
+                const t = Math.max(96, (vh - h) * 0.36);
+                win = { x, t, w, h, b: vh - t - h };
+                root.style.setProperty("--wx", `${x}px`);
+                root.style.setProperty("--wt", `${t}px`);
+                root.style.setProperty("--ww", `${w}px`);
+                root.style.setProperty("--wh", `${h}px`);
+                sceneTop = scene.offsetTop;
+                sceneLen = Math.max(1, scene.offsetHeight - vh);
+                finaleTop = finale.offsetTop;
+            }
+
+            function frame() {
+                const y = scrollY;
+
+                // Hero : le texte se dissout
+                root.style.setProperty("--hp", clamp(y / (vh * 0.7)).toFixed(4));
+
+                // Scène : plein écran → fenêtre
+                const sp = clamp((y - sceneTop) / sceneLen);
+                const shrinkStart = vh * 0.3;
+                const shrinkEnd = sceneTop + sceneLen * 0.28;
+                let k = ease(clamp((y - shrinkStart) / (shrinkEnd - shrinkStart)));
+
+                // Finale : fenêtre → plein écran
+                const fq = ease(clamp((y + vh - finaleTop) / (vh * 0.9)));
+                if (y + vh > finaleTop) k = 1 - fq;
+
+                // Transition fluide entre la vidéo du haut et la vidéo du bas
+                const finaleProgress = clamp((y + vh - finaleTop) / (vh * 0.7));
+                root.style.setProperty("--yt-hero-op", (1 - finaleProgress).toFixed(3));
+                root.style.setProperty("--yt-finale-op", finaleProgress.toFixed(3));
+
+                const r = 32 * k;
+                media.style.clipPath = `inset(${(win.t * k).toFixed(1)}px ${(win.x * k).toFixed(1)}px ${(win.b * k).toFixed(1)}px ${(win.x * k).toFixed(1)}px round ${r.toFixed(1)}px)`;
+                zoom.style.setProperty("--zoom", lerp(1.08, 1, k).toFixed(4));
+                veil.style.setProperty("--veil", lerp(1, 0.08, k).toFixed(3));
+
+                const ui = clamp((k - 0.85) / 0.15) * (sp < 1 ? 1 : 0);
+                sceneSticky.style.setProperty("--k-ui", ui.toFixed(3));
+                sceneSticky.style.setProperty("--sp", sp.toFixed(4));
+
+                // Cartes flottantes, en cascade
+                cards.forEach((c, i) => {
+                    const v = ease(clamp((sp - (0.3 + i * 0.09)) / 0.14)) * ui;
+                    c.style.setProperty("--c", v.toFixed(3));
+                });
+
+                // Légendes : trois temps
+                const seg = sp < 0.42 ? 0 : sp < 0.7 ? 1 : 2;
+                caps.forEach((p, i) => {
+                    const start = [0.22, 0.42, 0.7][i];
+                    const end = [0.42, 0.7, 1.01][i];
+                    const fadeIn = clamp((sp - start) / 0.06);
+                    const fadeOut = i === 2 ? 1 : 1 - clamp((sp - (end - 0.05)) / 0.05);
+                    p.style.setProperty("--o", (Math.min(fadeIn, fadeOut) * ui).toFixed(3));
+                });
+                if (seg !== lastCap) { sceneN.textContent = String(seg + 1); lastCap = seg; }
+
+                // Navigation : claire sur la vidéo, sombre sur le papier
+                const sr = sheet.getBoundingClientRect();
+                const onSheet = sr.top < 60 && sr.bottom > 60;
+                nav.classList.toggle("on-paper", onSheet || (k > 0.6 && y + vh <= finaleTop + vh * 0.5 && y > vh * 0.5));
+            }
+
+            let ticking = false;
+            const request = () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { frame(); ticking = false; }); } };
+            measure(); frame();
+            addEventListener("scroll", request, { passive: true });
+            addEventListener("resize", () => { measure(); frame(); });
+            addEventListener("load", () => { measure(); frame(); });
+
+            /* Révélations ------------------------------------------------------ */
+            const io = new IntersectionObserver((entries) => {
+                entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+            }, { rootMargin: "0px 0px -12% 0px", threshold: 0.12 });
+            $$("[data-reveal]").forEach((el) => io.observe(el));
+
+            /* Copier les commandes -------------------------------------------- */
+            $$("[data-copy]").forEach((btn) => {
                 btn.addEventListener("click", async () => {
                     const src = document.getElementById(btn.dataset.copy);
                     const text = [...src.childNodes]
-                        .filter((node) => !(node.classList && node.classList.contains("p")))
-                        .map((node) => node.textContent)
-                        .join("")
-                        .split("\n")
-                        .filter((line) => line.trim() && !line.trim().startsWith("#"))
-                        .join("\n");
+                        .filter((n) => !(n.classList && n.classList.contains("p")))
+                        .map((n) => n.textContent).join("")
+                        .split("\n").filter((l) => l.trim() && !l.trim().startsWith("#")).join("\n");
                     try {
                         await navigator.clipboard.writeText(text);
-                        btn.setAttribute("aria-label", "Commandes copiées");
                         status.textContent = "Commandes copiées";
-                        setTimeout(() => btn.setAttribute("aria-label", "Copier les commandes"), 2000);
                     } catch {
                         status.textContent = "Copie impossible, sélectionnez le texte manuellement.";
                     }
