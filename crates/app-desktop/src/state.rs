@@ -69,6 +69,9 @@ impl ConnectedCamera {
             last_frame_time: std::time::Instant::now(),
             vcam_sink: None,
             vcam_enabled: false,
+            #[cfg(target_os = "windows")]
+            selected_vcam_device: "OpenCam Virtual Camera".to_string(),
+            #[cfg(not(target_os = "windows"))]
             selected_vcam_device: "/dev/video10".to_string(),
         }
     }

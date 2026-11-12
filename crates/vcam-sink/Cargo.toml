@@ -12,5 +12,17 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 libc = { workspace = true }
 
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_Memory",
+    "Win32_System_Registry",
+    "Win32_System_Threading",
+] }
+
+[target.'cfg(target_os = "windows")'.build-dependencies]
+cc = "1.2"
+
 [dev-dependencies]
 tokio = { workspace = true }

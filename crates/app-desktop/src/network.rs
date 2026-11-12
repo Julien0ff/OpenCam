@@ -223,7 +223,17 @@ pub async fn run_video_receiver(state: AppState, port: u16) -> Result<(), anyhow
 
                         // If Virtual Camera Sink is open and active, write frame!
                         if cam.vcam_enabled {
+                            let dev_path = cam.selected_vcam_device.clone();
                             if let Some(ref mut sink) = cam.vcam_sink {
+                                if sink.config().map(|c| (c.width, c.height)) != Some((w as u32, h as u32)) {
+                                    let _ = sink.open(vcam_sink::VcamConfig {
+                                        device_path: dev_path,
+                                        width: w as u32,
+                                        height: h as u32,
+                                        fps: 30,
+                                        format: core_protocol::PixelFormat::YUYV,
+                                    });
+                                }
                                 if sink.is_open() {
                                     // Convert to YUYV if needed
                                     let needed_yuyv_size = w * h * 2;

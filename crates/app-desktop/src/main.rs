@@ -68,6 +68,21 @@ fn main() -> Result<(), anyhow::Error> {
         *state.available_vcam_devices.lock().unwrap() = loopback_devs;
     }
 
+    #[cfg(target_os = "windows")]
+    {
+        if let Err(e) = vcam_sink::windows::ensure_virtual_camera_registered() {
+            tracing::warn!("Impossible d'enregistrer la caméra virtuelle Windows : {}", e);
+        }
+        *state.available_vcam_devices.lock().unwrap() = vec![vcam_sink::LoopbackDeviceInfo {
+            path: "OpenCam Virtual Camera".to_string(),
+            card_label: "OpenCam Virtual Camera".to_string(),
+            driver: "DirectShow".to_string(),
+            bus_info: "Local\\OpenCamVirtualCameraFrame".to_string(),
+            is_loopback: true,
+            is_available: true,
+        }];
+    }
+
     // 3. Start Tokio runtime for background network tasks
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()

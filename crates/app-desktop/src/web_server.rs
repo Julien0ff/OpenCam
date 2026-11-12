@@ -192,7 +192,17 @@ async fn handle_socket(mut socket: WebSocket, app_state: AppState) {
 
                                 // Si la diffusion vers la webcam virtuelle est active, injecte la frame
                                 if cam.vcam_enabled {
+                                    let dev_path = cam.selected_vcam_device.clone();
                                     if let Some(ref mut sink) = cam.vcam_sink {
+                                        if sink.config().map(|c| (c.width, c.height)) != Some((w, h)) {
+                                            let _ = sink.open(vcam_sink::VcamConfig {
+                                                device_path: dev_path,
+                                                width: w,
+                                                height: h,
+                                                fps: 30,
+                                                format: core_protocol::PixelFormat::YUYV,
+                                            });
+                                        }
                                         // Conversion RGBA vers YUYV pour vcam
                                         let yuyv = rgba_to_yuyv(&raw_rgba, w as usize, h as usize);
                                         let _ = sink.write_frame(&yuyv);
