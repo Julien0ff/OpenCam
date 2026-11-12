@@ -121,18 +121,24 @@ jobs:
             keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
-          # 2. Locate Android Build Tools
-          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
-          PLATFORM_JAR=$(ls -d $ANDROID_HOME/platforms/android-*/android.jar | sort -V | tail -n 1)
-          echo "Using Build-Tools: $BUILD_TOOLS_DIR"
-          echo "Using Platform Jar: $PLATFORM_JAR"
+          # 2. Locate Android Build Tools & Platform JAR
+          ZIPALIGN=$(find "$ANDROID_HOME/build-tools" -name zipalign 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$ZIPALIGN" ] || [ ! -x "$ZIPALIGN" ]; then
+            sudo apt-get update && sudo apt-get install -y zipalign
+            ZIPALIGN=$(which zipalign)
+          fi
 
-          AAPT2="$BUILD_TOOLS_DIR/aapt2"
-          ZIPALIGN="$BUILD_TOOLS_DIR/zipalign"
-          APKSIGNER="$BUILD_TOOLS_DIR/apksigner"
+          AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 2>/dev/null | sort -V | tail -n 1)
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner 2>/dev/null | sort -V | tail -n 1)
+          PLATFORM_JAR=$(find "$ANDROID_HOME/platforms" -name "android.jar" 2>/dev/null | sort -V | tail -n 1)
+
+          echo "AAPT2: $AAPT2"
+          echo "ZIPALIGN: $ZIPALIGN"
+          echo "APKSIGNER: $APKSIGNER"
+          echo "PLATFORM_JAR: $PLATFORM_JAR"
 
           # 3. Create Base Package from AndroidManifest.xml
-          $AAPT2 link -I "$PLATFORM_JAR" --manifest crates/app-mobile/android/AndroidManifest.xml -o unaligned.apk
+          "$AAPT2" link -I "$PLATFORM_JAR" --manifest crates/app-mobile/android/AndroidManifest.xml -o unaligned.apk
 
           # 4. Inject native library into unaligned.apk
           python3 -c "
@@ -142,13 +148,13 @@ jobs:
           "
 
           # 5. Zipalign (4-byte boundary)
-          \"$ZIPALIGN\" -v -f 4 unaligned.apk aligned.apk
+          "$ZIPALIGN" -v -f 4 unaligned.apk aligned.apk
 
           # 6. Sign APK with apksigner (v1, v2, v3 schemes)
-          \"$APKSIGNER\" sign --ks ~/.android/debug.keystore --ks-pass pass:android --key-pass pass:android --out opencam-mobile-android-arm64.apk aligned.apk
+          "$APKSIGNER" sign --ks ~/.android/debug.keystore --ks-pass pass:android --key-pass pass:android --out opencam-mobile-android-arm64.apk aligned.apk
 
           # 7. Verify APK
-          \"$APKSIGNER\" verify -v opencam-mobile-android-arm64.apk
+          "$APKSIGNER" verify -v opencam-mobile-android-arm64.apk
 
       - name: Upload Android Artifact
         uses: actions/upload-artifact@v4
