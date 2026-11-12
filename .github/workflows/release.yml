@@ -138,7 +138,7 @@ jobs:
           echo "PLATFORM_JAR: $PLATFORM_JAR"
 
           # 3. Create Base Package from AndroidManifest.xml
-          "$AAPT2" link -I "$PLATFORM_JAR" --manifest crates/app-mobile/android/AndroidManifest.xml -o unaligned.apk
+          "$AAPT2" link -I "$PLATFORM_JAR" --min-sdk-version 24 --target-sdk-version 34 --manifest crates/app-mobile/android/AndroidManifest.xml -o unaligned.apk
 
           # 4. Inject native library into unaligned.apk
           python3 -c "
@@ -190,27 +190,28 @@ jobs:
           fi
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.tag_info.outputs.TAG }}
-          name: "OpenCam ${{ steps.tag_info.outputs.TAG }}"
-          body: |
-            ## OpenCam Release ${{ steps.tag_info.outputs.TAG }}
-
-            Suite webcam virtuelle 100% Rust multiplateforme à ultra-faible latence (< 20ms LAN).
-
-            ### Nouveautés & Correctifs
-            - **Régie Broadcast Multi-Cam :** Commutation instantanée 1-clic avec bus Tally (Program / Preview).
-            - **Center Stage IA :** Suivi dynamique du visage avec auto-zoom proportionnel à la distance du sujet.
-            - **Sortie Système :** Injection directe dans `/dev/video10` (Linux v4l2loopback) et Windows Media Foundation.
-            - **Réseau :** Découverte mDNS automatique et transport vidéo UDP avec réassembleur drop-on-late.
-
-            ### Fichiers de Release
-            - Linux x86_64 : `opencam-desktop-linux-x86_64.tar.gz`
-            - Windows x86_64 : `opencam-studio-windows-x86_64.exe` (Exécutable direct)
-            - Android ARM64 : `opencam-mobile-android-arm64.apk` (APK installable directement)
-            - Empreintes cryptographiques : `SHA256SUMS.txt`
-          files: release-assets/*
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat << 'EOF' > release_notes.md
+          ## OpenCam Release ${{ steps.tag_info.outputs.TAG }}
+
+          Suite webcam virtuelle 100% Rust multiplateforme à ultra-faible latence (< 20ms LAN).
+
+          ### Nouveautés & Correctifs
+          - **Régie Broadcast Multi-Cam :** Commutation instantanée 1-clic avec bus Tally (Program / Preview).
+          - **Center Stage IA :** Suivi dynamique du visage avec auto-zoom proportionnel à la distance du sujet.
+          - **Sortie Système :** Injection directe dans `/dev/video10` (Linux v4l2loopback) et Windows Media Foundation.
+          - **Réseau :** Découverte mDNS automatique et transport vidéo UDP avec réassembleur drop-on-late.
+
+          ### Fichiers de Release
+          - Linux x86_64 : `opencam-desktop-linux-x86_64.tar.gz`
+          - Windows x86_64 : `opencam-studio-windows-x86_64.exe` (Exécutable direct, sans fenêtre console)
+          - Android ARM64 : `opencam-mobile-android-arm64.apk` (APK installable directement)
+          - Empreintes cryptographiques : `SHA256SUMS.txt`
+          EOF
+
+          gh release create "${{ steps.tag_info.outputs.TAG }}" release-assets/* \
+            --title "OpenCam ${{ steps.tag_info.outputs.TAG }}" \
+            --notes-file release_notes.md
 

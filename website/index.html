@@ -1403,8 +1403,29 @@
                 }
 
                 @media (max-width: 640px) {
+                    .sheet {
+                        border-radius: 28px;
+                    }
+
                     .site-footer {
                         border-radius: 24px;
+                    }
+
+                    .hero h1 {
+                        font-size: clamp(2.35rem, 1.4rem + 5vw, 4rem);
+                    }
+
+                    .hero-actions {
+                        flex-direction: column;
+                        align-items: stretch;
+                    }
+
+                    .hero-actions .btn {
+                        width: 100%;
+                    }
+
+                    .wrap {
+                        padding-inline: 18px;
                     }
                 }
 
@@ -1497,7 +1518,7 @@
                 </div>
             </div>
             <div class="hero-foot">
-                <p>Version 26.0<br>Windows · Linux · Android</p>
+                <p><span data-version>Version 26.0</span><br>Windows · Linux · Android</p>
                 <div class="scroll-cue" aria-hidden="true"><span>Faites défiler</span><i></i></div>
                 <button class="media-toggle" type="button" aria-label="Mettre la vidéo de fond en pause"
                     data-media-toggle>
@@ -1725,7 +1746,7 @@
             <section class="section" id="telecharger" aria-labelledby="telecharger-titre">
                 <div class="wrap">
                     <div class="section-head">
-                        <span class="eyebrow" data-reveal>Version 26.0</span>
+                        <span class="eyebrow" data-reveal data-version>Version 26.0</span>
                         <h2 id="telecharger-titre" data-reveal style="--d:1">Télécharger <em>OpenCam.</em></h2>
                         <p data-reveal style="--d:2">La régie s’installe sur l’ordinateur, le transmetteur sur chaque
                             téléphone.</p>
@@ -1883,6 +1904,18 @@
                 $("#cta-label").textContent = `Télécharger pour ${os === "windows" ? "Windows" : os === "android" ? "Android (APK)" : "Linux"}`;
             }
             if (os) $(`.dl[data-os="${os}"]`)?.classList.add("is-mine");
+
+            // Récupère dynamiquement la version réelle depuis l'API GitHub Releases
+            fetch("https://api.github.com/repos/Julien0ff/OpenCam/releases/latest")
+                .then((r) => r.ok ? r.json() : null)
+                .then((data) => {
+                    if (!data || !data.tag_name) return;
+                    const ver = data.tag_name.replace(/^v/, "");
+                    $$("[data-version]").forEach((el) => {
+                        el.textContent = `Version ${ver}`;
+                    });
+                })
+                .catch(() => {});
 
             /* Moteur de scroll ------------------------------------------------- */
             const root = document.documentElement;

@@ -55,7 +55,7 @@ if [ -d "$ANDROID_SDK" ]; then
             keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" 2>/dev/null
         fi
 
-        "$BUILD_TOOLS_DIR/aapt2" link -I "$PLATFORM_JAR" --manifest AndroidManifest.xml -o unaligned.apk
+        "$BUILD_TOOLS_DIR/aapt2" link -I "$PLATFORM_JAR" --min-sdk-version 24 --target-sdk-version 34 --manifest AndroidManifest.xml -o unaligned.apk
         python3 -c "
 import zipfile
 with zipfile.ZipFile('unaligned.apk', 'a', compression=zipfile.ZIP_DEFLATED) as zf:

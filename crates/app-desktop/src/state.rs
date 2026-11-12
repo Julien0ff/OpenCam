@@ -87,6 +87,8 @@ pub struct AppState {
     pub server_ip: Arc<Mutex<String>>,
     pub server_control_port: u16,
     pub server_video_port: u16,
+    pub server_web_port: u16,
+    pub show_qr_modal: Arc<Mutex<bool>>,
     pub is_mdns_active: Arc<Mutex<bool>>,
     pub total_bandwidth_kbps: Arc<Mutex<f32>>,
 }
@@ -97,11 +99,26 @@ impl Default for AppState {
             cameras: Arc::new(Mutex::new(HashMap::new())),
             selected_device_id: Arc::new(Mutex::new(None)),
             available_vcam_devices: Arc::new(Mutex::new(Vec::new())),
-            server_ip: Arc::new(Mutex::new("0.0.0.0".to_string())),
+            server_ip: Arc::new(Mutex::new(Self::detect_local_ip())),
             server_control_port: core_protocol::DEFAULT_CONTROL_PORT,
             server_video_port: core_protocol::DEFAULT_VIDEO_PORT,
+            server_web_port: 8766,
+            show_qr_modal: Arc::new(Mutex::new(false)),
             is_mdns_active: Arc::new(Mutex::new(false)),
             total_bandwidth_kbps: Arc::new(Mutex::new(0.0)),
         }
+    }
+}
+
+impl AppState {
+    pub fn detect_local_ip() -> String {
+        if let Ok(socket) = std::net::UdpSocket::bind("0.0.0.0:0") {
+            if socket.connect("8.8.8.8:80").is_ok() {
+                if let Ok(addr) = socket.local_addr() {
+                    return addr.ip().to_string();
+                }
+            }
+        }
+        "127.0.0.1".to_string()
     }
 }

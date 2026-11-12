@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.opencam.mobile"
-    android:versionCode="1"
-    android:versionName="1.0.0">
+    android:versionCode="2600"
+    android:versionName="26.0.0">
+
+    <uses-sdk
+        android:minSdkVersion="24"
+        android:targetSdkVersion="34" />
 
     <!-- Permissions required for full camera capture, flashlight, and Wi-Fi streaming -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -20,6 +24,7 @@
     <application
         android:label="OpenCam"
         android:hasCode="false"
+        android:extractNativeLibs="true"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
 
         <activity

@@ -1,6 +1,9 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod network;
 mod state;
 mod ui;
+mod web_server;
 
 use state::AppState;
 use std::net::SocketAddr;
@@ -54,6 +57,13 @@ async fn main() -> Result<(), anyhow::Error> {
         if let Err(e) = network::run_video_receiver(video_state, video_port).await {
             tracing::error!("Video receiver error: {}", e);
         }
+    });
+
+    // 5b. Start HTML5 Mobile Web Streaming Server (No-App mode)
+    let web_state = state.clone();
+    let web_port = state.server_web_port;
+    tokio::spawn(async move {
+        web_server::start_web_server(web_state, web_port).await;
     });
 
     // 6. Launch egui Studio UI on main thread
