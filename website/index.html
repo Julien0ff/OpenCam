@@ -281,8 +281,8 @@
         .stage-zoom {
             position: absolute;
             inset: 0;
-            transform: scale(var(--zoom, 1.08));
-            transform-origin: 50% 45%;
+            transform: translate3d(0, var(--ty, 0px), 0) scale(var(--zoom, 1.08));
+            transform-origin: 50% 50%;
             will-change: transform;
         }
 
@@ -1546,7 +1546,7 @@
                 </div>
             </div>
             <div class="hero-foot">
-                <p><span data-version>Version 26.0</span><br>Windows · Linux · Android</p>
+                <p><span data-version>Version 26.5</span><br>Windows · Linux · QR Code mobile</p>
                 <div class="scroll-cue" aria-hidden="true"><span>Faites défiler</span><i></i></div>
                 <button class="media-toggle" type="button" aria-label="Mettre la vidéo de fond en pause"
                     data-media-toggle>
@@ -1629,14 +1629,14 @@
                         <li class="step" data-reveal style="--d:0">
                             <span class="step-n" aria-hidden="true">1</span>
                             <h3>Installez la régie</h3>
-                            <p>OpenCam Studio tourne sous Windows et Linux. C’est là que vous voyez vos caméras et
-                                choisissez celle qui est diffusée.</p>
+                            <p>OpenCam Studio tourne sous Windows et Linux. Dès le lancement, un QR code de connexion
+                                s’affiche directement à l’écran.</p>
                         </li>
                         <li class="step" data-reveal style="--d:1">
                             <span class="step-n" aria-hidden="true">2</span>
-                            <h3>Ouvrez OpenCam sur vos téléphones</h3>
-                            <p>Sur le même Wi-Fi, ils apparaissent tout seuls dans la régie. Rien à saisir, aucune
-                                adresse IP à recopier.</p>
+                            <h3>Scannez le QR code avec vos téléphones</h3>
+                            <p>Aucune application mobile à installer : pointez simplement l’appareil photo de votre
+                                iPhone ou Android vers le QR code. Votre caméra démarre aussitôt dans le navigateur.</p>
                         </li>
                         <li class="step" data-reveal style="--d:2">
                             <span class="step-n" aria-hidden="true">3</span>
@@ -1992,30 +1992,42 @@
                 const finaleProgress = clamp((y + vh - finaleTop) / (vh * 0.7));
                 root.style.setProperty("--yt-hero-op", (1 - finaleProgress).toFixed(3));
                 root.style.setProperty("--yt-finale-op", finaleProgress.toFixed(3));
+                if (finaleProgress > 0.01 && !paused && vFinale && vFinale.paused) {
+                    vFinale.play().catch(() => {});
+                }
 
+                // Redimensionnement fluide de la vidéo dans le rectangle
+                const targetScale = Math.max(win.w / vw, win.h / vh);
+                const targetTy = (win.t + win.h * 0.5) - (vh * 0.5);
                 const r = 32 * k;
                 media.style.clipPath = `inset(${(win.t * k).toFixed(1)}px ${(win.x * k).toFixed(1)}px ${(win.b * k).toFixed(1)}px ${(win.x * k).toFixed(1)}px round ${r.toFixed(1)}px)`;
-                zoom.style.setProperty("--zoom", lerp(1.08, 1, k).toFixed(4));
+                zoom.style.setProperty("--zoom", lerp(1.08, targetScale, k).toFixed(4));
+                zoom.style.setProperty("--ty", `${lerp(0, targetTy, k).toFixed(1)}px`);
                 veil.style.setProperty("--veil", lerp(1, 0.08, k).toFixed(3));
 
-                const ui = clamp((k - 0.85) / 0.15) * (sp < 1 ? 1 : 0);
+                // Apparition et disparition en douceur de l'UI (pas de despawn brutal)
+                const uiIn = clamp((k - 0.85) / 0.15);
+                const uiOut = 1 - ease(clamp((sp - 0.88) / 0.12));
+                const ui = uiIn * uiOut;
                 sceneSticky.style.setProperty("--k-ui", ui.toFixed(3));
                 sceneSticky.style.setProperty("--sp", sp.toFixed(4));
 
-                // Cartes flottantes, en cascade
+                // Cartes flottantes : entrée en cascade + sortie fluide en fin de scène
                 cards.forEach((c, i) => {
-                    const v = ease(clamp((sp - (0.3 + i * 0.09)) / 0.14)) * ui;
+                    const enter = ease(clamp((sp - (0.28 + i * 0.08)) / 0.14));
+                    const leave = 1 - ease(clamp((sp - (0.86 + i * 0.02)) / 0.10));
+                    const v = enter * leave * uiIn;
                     c.style.setProperty("--c", v.toFixed(3));
                 });
 
-                // Légendes : trois temps
+                // Légendes : trois temps avec fondu de sortie sur la dernière légende aussi
                 const seg = sp < 0.42 ? 0 : sp < 0.7 ? 1 : 2;
                 caps.forEach((p, i) => {
-                    const start = [0.22, 0.42, 0.7][i];
-                    const end = [0.42, 0.7, 1.01][i];
-                    const fadeIn = clamp((sp - start) / 0.06);
-                    const fadeOut = i === 2 ? 1 : 1 - clamp((sp - (end - 0.05)) / 0.05);
-                    p.style.setProperty("--o", (Math.min(fadeIn, fadeOut) * ui).toFixed(3));
+                    const start = [0.22, 0.42, 0.70][i];
+                    const end = [0.42, 0.70, 0.96][i];
+                    const fadeIn = ease(clamp((sp - start) / 0.06));
+                    const fadeOut = 1 - ease(clamp((sp - (end - 0.06)) / 0.06));
+                    p.style.setProperty("--o", (Math.min(fadeIn, fadeOut) * uiIn).toFixed(3));
                 });
                 if (seg !== lastCap) { sceneN.textContent = String(seg + 1); lastCap = seg; }
 

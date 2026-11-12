@@ -71,3 +71,16 @@ cargo ndk -t arm64-v8a -o crates/app-mobile/android/app/src/main/jniLibs build -
 ```bash
 cargo test --all
 ```
+
+---
+
+## 📱 Connexion Sans Application (QR Code)
+Plus besoin d'installer quoi que ce soit sur votre smartphone :
+1. Lancez **OpenCam Studio** sur votre PC (Windows ou Linux).
+2. Un **QR Code** s'affiche à l'écran (ou via le bouton `Sans app (QR Code)`).
+3. Scannez-le avec l'appareil photo de votre iPhone (Safari) ou smartphone Android (Chrome) sur le même réseau Wi-Fi pour diffuser immédiatement.
+
+---
+
+## 📄 Licence
+Ce projet est un logiciel libre distribué sous licence **GNU General Public License v3.0 (GPL-3.0)**. Voir le fichier [`LICENSE`](LICENSE) pour plus de détails.
