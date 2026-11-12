@@ -113,16 +113,48 @@ jobs:
           mkdir -p crates/app-mobile/android/app/src/main/jniLibs/arm64-v8a
           cargo ndk -t arm64-v8a -o crates/app-mobile/android/app/src/main/jniLibs build --release --package app-mobile --lib
 
-      - name: Package Standalone Android Archive
+      - name: Build and Sign Android APK
         run: |
-          cd crates/app-mobile/android
-          zip -r ../../../opencam-mobile-android-arm64.zip app/src/main/jniLibs/ AndroidManifest.xml
+          # 1. Debug Keystore
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+          # 2. Locate Android Build Tools
+          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+          PLATFORM_JAR=$(ls -d $ANDROID_HOME/platforms/android-*/android.jar | sort -V | tail -n 1)
+          echo "Using Build-Tools: $BUILD_TOOLS_DIR"
+          echo "Using Platform Jar: $PLATFORM_JAR"
+
+          AAPT2="$BUILD_TOOLS_DIR/aapt2"
+          ZIPALIGN="$BUILD_TOOLS_DIR/zipalign"
+          APKSIGNER="$BUILD_TOOLS_DIR/apksigner"
+
+          # 3. Create Base Package from AndroidManifest.xml
+          $AAPT2 link -I "$PLATFORM_JAR" --manifest crates/app-mobile/android/AndroidManifest.xml -o unaligned.apk
+
+          # 4. Inject native library into unaligned.apk
+          python3 -c "
+          import zipfile
+          with zipfile.ZipFile('unaligned.apk', 'a', compression=zipfile.ZIP_DEFLATED) as zf:
+              zf.write('crates/app-mobile/android/app/src/main/jniLibs/arm64-v8a/libapp_mobile.so', 'lib/arm64-v8a/libapp_mobile.so')
+          "
+
+          # 5. Zipalign (4-byte boundary)
+          \"$ZIPALIGN\" -v -f 4 unaligned.apk aligned.apk
+
+          # 6. Sign APK with apksigner (v1, v2, v3 schemes)
+          \"$APKSIGNER\" sign --ks ~/.android/debug.keystore --ks-pass pass:android --key-pass pass:android --out opencam-mobile-android-arm64.apk aligned.apk
+
+          # 7. Verify APK
+          \"$APKSIGNER\" verify -v opencam-mobile-android-arm64.apk
 
       - name: Upload Android Artifact
         uses: actions/upload-artifact@v4
         with:
           name: opencam-mobile-android-arm64
-          path: opencam-mobile-android-arm64.zip
+          path: opencam-mobile-android-arm64.apk
 
   create-github-release:
     name: Create GitHub Release
@@ -170,7 +202,7 @@ jobs:
             ### Fichiers de Release
             - Linux x86_64 : `opencam-desktop-linux-x86_64.tar.gz`
             - Windows x86_64 : `opencam-studio-windows-x86_64.exe` (Exécutable direct)
-            - Android ARM64 : `opencam-mobile-android-arm64.zip`
+            - Android ARM64 : `opencam-mobile-android-arm64.apk` (APK installable directement)
             - Empreintes cryptographiques : `SHA256SUMS.txt`
           files: release-assets/*
         env:

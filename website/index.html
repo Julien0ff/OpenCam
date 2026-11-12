@@ -1755,11 +1755,11 @@
                             <div class="dl-top">
                                 <h3>Android</h3><span class="dl-tag">Transmetteur · ARM64</span>
                             </div>
-                            <p>Bibliothèques natives à intégrer. L’APK installable arrive bientôt.</p>
-                            <code class="file">opencam-mobile-android-arm64.zip</code>
-                            <a class="btn btn-line btn-sm"
-                                href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-mobile-android-arm64.zip">Télécharger
-                                l’archive</a>
+                            <p>Transmetteur caméra natif haute performance. Téléchargez directement l’APK.</p>
+                            <code class="file">opencam-mobile-android-arm64.apk</code>
+                            <a class="btn btn-ink btn-sm"
+                                href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-mobile-android-arm64.apk">Télécharger
+                                l’APK</a>
                         </article>
                         <article class="dl" data-os="ios" data-reveal style="--d:1">
                             <div class="dl-top">
@@ -1873,10 +1873,14 @@
             /* Bouton principal adapté au système ------------------------------- */
             const ua = navigator.userAgent;
             const os = /Windows/i.test(ua) ? "windows" : /Android/i.test(ua) ? "android" : /iPhone|iPad/i.test(ua) ? "ios" : /Linux/i.test(ua) ? "linux" : null;
-            const files = { windows: "opencam-studio-windows-x86_64.exe", linux: "opencam-desktop-linux-x86_64.tar.gz" };
+            const files = {
+                windows: "opencam-studio-windows-x86_64.exe",
+                linux: "opencam-desktop-linux-x86_64.tar.gz",
+                android: "opencam-mobile-android-arm64.apk"
+            };
             if (files[os]) {
                 $("#cta").href = `${REPO}/releases/latest/download/${files[os]}`;
-                $("#cta-label").textContent = `Télécharger pour ${os === "windows" ? "Windows" : "Linux"}`;
+                $("#cta-label").textContent = `Télécharger pour ${os === "windows" ? "Windows" : os === "android" ? "Android (APK)" : "Linux"}`;
             }
             if (os) $(`.dl[data-os="${os}"]`)?.classList.add("is-mine");
 

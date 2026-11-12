@@ -41,6 +41,33 @@ cargo ndk \
 echo "[+] Compilation native terminée avec succès !"
 echo "[+] Fichiers générés dans : $OUTPUT_DIR/arm64-v8a/libapp_mobile.so"
 echo ""
+
+# 5. Emballage et signature automatique de l'APK (si Android SDK build-tools et platforms sont présents)
+ANDROID_SDK="${ANDROID_HOME:-$HOME/Android/Sdk}"
+if [ -d "$ANDROID_SDK" ]; then
+    BUILD_TOOLS_DIR=$(ls -d "$ANDROID_SDK"/build-tools/* 2>/dev/null | sort -V | tail -n 1)
+    PLATFORM_JAR=$(ls -d "$ANDROID_SDK"/platforms/android-*/android.jar 2>/dev/null | sort -V | tail -n 1)
+
+    if [ -n "$BUILD_TOOLS_DIR" ] && [ -n "$PLATFORM_JAR" ]; then
+        echo "[*] Génération directe du package APK signé..."
+        mkdir -p ~/.android
+        if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" 2>/dev/null
+        fi
+
+        "$BUILD_TOOLS_DIR/aapt2" link -I "$PLATFORM_JAR" --manifest AndroidManifest.xml -o unaligned.apk
+        python3 -c "
+import zipfile
+with zipfile.ZipFile('unaligned.apk', 'a', compression=zipfile.ZIP_DEFLATED) as zf:
+    zf.write('$OUTPUT_DIR/arm64-v8a/libapp_mobile.so', 'lib/arm64-v8a/libapp_mobile.so')
+"
+        "$BUILD_TOOLS_DIR/zipalign" -v -f 4 unaligned.apk aligned.apk > /dev/null
+        "$BUILD_TOOLS_DIR/apksigner" sign --ks ~/.android/debug.keystore --ks-pass pass:android --key-pass pass:android --out opencam-mobile-android-arm64.apk aligned.apk
+        rm -f unaligned.apk aligned.apk
+        echo "[+] APK généré avec succès : $(pwd)/opencam-mobile-android-arm64.apk"
+    fi
+fi
+
 echo "[*] Pour déployer sur votre smartphone connecté via USB :"
-echo "    adb install -r android/app/build/outputs/apk/release/app-release.apk"
+echo "    adb install -r opencam-mobile-android-arm64.apk"
 
