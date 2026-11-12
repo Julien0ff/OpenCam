@@ -1369,18 +1369,35 @@
                 .site-footer {
                     display: flex;
                     flex-wrap: wrap;
-                    gap: 12px 24px;
+                    gap: 16px 28px;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 14px 14px 14px 22px;
-                    border-radius: 999px;
-                    background: var(--glass-dark-bg);
-                    border: 1px solid var(--glass-dark-line);
-                    backdrop-filter: blur(18px);
-                    -webkit-backdrop-filter: blur(18px);
-                    font-size: 0.8125rem;
-                    color: rgba(255, 255, 255, 0.82);
+                    width: 100%;
+                    max-width: 1120px;
+                    margin: 0 auto;
+                    padding: 18px 24px;
+                    border-radius: 20px;
+                    background: rgba(16, 16, 18, 0.72);
+                    border: 1px solid rgba(255, 255, 255, 0.14);
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
+                    font-size: 0.875rem;
+                    color: rgba(255, 255, 255, 0.84);
                     text-align: left;
+                }
+
+                .site-footer p {
+                    margin: 0;
+                    font-size: 0.875rem;
+                    color: rgba(255, 255, 255, 0.84);
+                    max-width: none;
+                }
+
+                .site-footer-right {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    flex-wrap: wrap;
                 }
 
                 .site-footer nav {
@@ -1396,10 +1413,13 @@
                     padding: 0 12px;
                     border-radius: 999px;
                     text-decoration: none;
+                    color: rgba(255, 255, 255, 0.88);
+                    transition: background-color 0.2s ease;
                 }
 
                 .site-footer nav a:hover {
-                    background: rgba(255, 255, 255, 0.12);
+                    background: rgba(255, 255, 255, 0.14);
+                    color: #fff;
                 }
 
                 @media (max-width: 640px) {
@@ -1408,7 +1428,15 @@
                     }
 
                     .site-footer {
-                        border-radius: 24px;
+                        flex-direction: column;
+                        align-items: center;
+                        text-align: center;
+                        padding: 20px 18px;
+                        border-radius: 20px;
+                    }
+
+                    .site-footer-right {
+                        justify-content: center;
                     }
 
                     .hero h1 {
@@ -1730,7 +1758,7 @@
                                 </tr>
                                 <tr>
                                     <th scope="row">Modèle</th>
-                                    <td class="us">Libre (MIT ou Apache&nbsp;2.0)</td>
+                                    <td class="us">Libre (GNU GPL&nbsp;v3)</td>
                                     <td>Propriétaire, filigrane</td>
                                     <td>Abonnement</td>
                                     <td>Propriétaire, publicités</td>
@@ -1746,10 +1774,9 @@
             <section class="section" id="telecharger" aria-labelledby="telecharger-titre">
                 <div class="wrap">
                     <div class="section-head">
-                        <span class="eyebrow" data-reveal data-version>Version 26.0</span>
+                        <span class="eyebrow" data-reveal data-version>Version 26.5</span>
                         <h2 id="telecharger-titre" data-reveal style="--d:1">Télécharger <em>OpenCam.</em></h2>
-                        <p data-reveal style="--d:2">La régie s’installe sur l’ordinateur, le transmetteur sur chaque
-                            téléphone.</p>
+                        <p data-reveal style="--d:2">Installez la régie sur votre ordinateur. Aucune application à télécharger sur votre téléphone.</p>
                     </div>
                     <div class="dl-grid">
                         <article class="dl" data-os="windows" data-reveal>
@@ -1772,25 +1799,16 @@
                                 href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-desktop-linux-x86_64.tar.gz">Télécharger
                                 pour Linux</a>
                         </article>
-                        <article class="dl" data-os="android" data-reveal>
+                        <article class="dl dl-wide" data-os="mobile" data-reveal>
                             <div class="dl-top">
-                                <h3>Android</h3><span class="dl-tag">Transmetteur · ARM64</span>
+                                <h3>Smartphones (iPhone &amp; Android)</h3><span class="dl-tag">Zéro installation · QR Code</span>
                             </div>
-                            <p>Transmetteur caméra natif haute performance. Téléchargez directement l’APK.</p>
-                            <code class="file">opencam-mobile-android-arm64.apk</code>
-                            <a class="btn btn-ink btn-sm"
-                                href="https://github.com/Julien0ff/OpenCam/releases/latest/download/opencam-mobile-android-arm64.apk">Télécharger
-                                l’APK</a>
-                        </article>
-                        <article class="dl" data-os="ios" data-reveal style="--d:1">
-                            <div class="dl-top">
-                                <h3>iOS</h3><span class="dl-tag">Transmetteur</span>
-                            </div>
-                            <p>Pas encore de version prête à installer. Compilation depuis les sources avec
-                                <code>cargo-apple</code>.
+                            <p>
+                                Aucune application mobile à télécharger sur l’App Store ou Google Play : lancez simplement
+                                <strong>OpenCam Studio</strong> sur votre ordinateur, un <strong>QR code</strong> s’affiche
+                                directement à l’écran. Scannez-le avec l’appareil photo de votre téléphone (Safari iOS ou Chrome Android)
+                                pour diffuser votre caméra instantanément en Wi-Fi local.
                             </p>
-                            <a class="btn btn-line btn-sm" href="https://github.com/Julien0ff/OpenCam#readme">Lire le
-                                guide</a>
                         </article>
                         <div class="dl-wide" data-reveal>
                             <div class="term">
@@ -1823,30 +1841,31 @@
         <section class="finale" id="finale" aria-labelledby="finale-titre">
             <div class="finale-inner">
                 <h2 id="finale-titre" data-reveal>Silence, <em>on tourne.</em></h2>
-                <p data-reveal style="--d:1">Installez la régie, ouvrez l’app sur votre téléphone. Vous êtes en direct
-                    dans deux minutes.</p>
+                <p data-reveal style="--d:1">Installez la régie sur votre ordinateur, scannez le QR code avec votre téléphone. Vous êtes en direct en quelques secondes.</p>
                 <div class="hero-actions" data-reveal style="--d:2">
                     <a class="btn btn-white" id="cta-2" href="#telecharger">Télécharger OpenCam</a>
                     <a class="btn btn-glass" href="https://github.com/Julien0ff/OpenCam">Voir le code source</a>
                 </div>
             </div>
             <footer class="site-footer">
-                <p>OpenCam, logiciel libre sous licence MIT ou Apache&nbsp;2.0.</p>
-                <nav aria-label="Liens du projet">
-                    <a href="https://github.com/Julien0ff/OpenCam">Code source</a>
-                    <a href="https://github.com/Julien0ff/OpenCam/releases">Versions</a>
-                    <a href="https://github.com/Julien0ff/OpenCam/actions">Intégration continue</a>
-                </nav>
-                <button class="media-toggle" type="button" aria-label="Mettre la vidéo de fond en pause"
-                    data-media-toggle>
-                    <svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true">
-                        <rect x="2" y="1" width="3.5" height="12" rx="1" fill="currentColor" />
-                        <rect x="8.5" y="1" width="3.5" height="12" rx="1" fill="currentColor" />
-                    </svg>
-                    <svg class="i-play" viewBox="0 0 14 14" aria-hidden="true">
-                        <path d="M3 1.5l9.5 5.5L3 12.5z" fill="currentColor" />
-                    </svg>
-                </button>
+                <p><strong>OpenCam</strong> — Logiciel libre sous licence <a href="https://github.com/Julien0ff/OpenCam/blob/master/LICENSE" style="text-decoration: underline;">GNU GPL v3</a>.</p>
+                <div class="site-footer-right">
+                    <nav aria-label="Liens du projet">
+                        <a href="https://github.com/Julien0ff/OpenCam">Code source</a>
+                        <a href="https://github.com/Julien0ff/OpenCam/releases">Versions</a>
+                        <a href="https://github.com/Julien0ff/OpenCam/actions">Intégration continue</a>
+                    </nav>
+                    <button class="media-toggle" type="button" aria-label="Mettre la vidéo de fond en pause"
+                        data-media-toggle>
+                        <svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true">
+                            <rect x="2" y="1" width="3.5" height="12" rx="1" fill="currentColor" />
+                            <rect x="8.5" y="1" width="3.5" height="12" rx="1" fill="currentColor" />
+                        </svg>
+                        <svg class="i-play" viewBox="0 0 14 14" aria-hidden="true">
+                            <path d="M3 1.5l9.5 5.5L3 12.5z" fill="currentColor" />
+                        </svg>
+                    </button>
+                </div>
             </footer>
         </section>
     </main>
@@ -1893,15 +1912,17 @@
 
             /* Bouton principal adapté au système ------------------------------- */
             const ua = navigator.userAgent;
-            const os = /Windows/i.test(ua) ? "windows" : /Android/i.test(ua) ? "android" : /iPhone|iPad/i.test(ua) ? "ios" : /Linux/i.test(ua) ? "linux" : null;
+            const os = /Windows/i.test(ua) ? "windows" : /Android|iPhone|iPad/i.test(ua) ? "mobile" : /Linux/i.test(ua) ? "linux" : null;
             const files = {
                 windows: "opencam-studio-windows-x86_64.exe",
-                linux: "opencam-desktop-linux-x86_64.tar.gz",
-                android: "opencam-mobile-android-arm64.apk"
+                linux: "opencam-desktop-linux-x86_64.tar.gz"
             };
             if (files[os]) {
                 $("#cta").href = `${REPO}/releases/latest/download/${files[os]}`;
-                $("#cta-label").textContent = `Télécharger pour ${os === "windows" ? "Windows" : os === "android" ? "Android (APK)" : "Linux"}`;
+                $("#cta-label").textContent = `Télécharger pour ${os === "windows" ? "Windows" : "Linux"}`;
+            } else if (os === "mobile") {
+                $("#cta").href = "#telecharger";
+                $("#cta-label").textContent = "Connexion par QR Code (sur PC)";
             }
             if (os) $(`.dl[data-os="${os}"]`)?.classList.add("is-mine");
 
