@@ -724,7 +724,7 @@ impl eframe::App for DesktopStudioApp {
                 None => {
                     // Écran d'accueil avec QR Code direct (Zéro installation requise)
                     let web_port = self.state.server_web_port;
-                    let mobile_url = format!("http://{}:{}", server_ip, web_port);
+                    let mobile_url = format!("https://{}:{}", server_ip, web_port);
 
                     ui.centered_and_justified(|ui| {
                         ui.vertical_centered(|ui| {
@@ -994,7 +994,7 @@ impl eframe::App for DesktopStudioApp {
         if show_qr {
             let server_ip = self.state.server_ip.lock().unwrap().clone();
             let web_port = self.state.server_web_port;
-            let mobile_url = format!("http://{}:{}", server_ip, web_port);
+            let mobile_url = format!("https://{}:{}", server_ip, web_port);
 
             egui::Window::new("Connecter un smartphone sans application")
                 .collapsible(false)

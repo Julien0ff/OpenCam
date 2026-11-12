@@ -19,14 +19,50 @@ use tracing::{error, info, warn};
 static CLIENT_COUNTER: AtomicU64 = AtomicU64::new(1);
 
 pub async fn start_web_server(state: AppState, port: u16) {
+    let _ = rustls::crypto::ring::default_provider().install_default();
+    let local_ip = state.server_ip.lock().unwrap().clone();
     let app = Router::new()
         .route("/", get(serve_camera_page))
         .route("/ws", get(ws_handler))
         .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    info!("OpenCam Web Camera Server starting on http://0.0.0.0:{}", port);
 
+    // Generate self-signed TLS certificate so mobile browsers allow getUserMedia()
+    let mut san = vec!["localhost".to_string(), "127.0.0.1".to_string()];
+    if local_ip != "0.0.0.0" && local_ip != "127.0.0.1" {
+        san.push(local_ip.clone());
+    }
+
+    match rcgen::generate_simple_self_signed(san) {
+        Ok(certified_key) => {
+            let cert_der = certified_key.cert.der().to_vec();
+            let key_der = certified_key.key_pair.serialize_der();
+            match axum_server::tls_rustls::RustlsConfig::from_der(vec![cert_der], key_der).await {
+                Ok(tls_config) => {
+                    info!(
+                        "OpenCam HTTPS Web Camera Server starting on https://{}:{}",
+                        local_ip, port
+                    );
+                    if let Err(e) = axum_server::bind_rustls(addr, tls_config)
+                        .serve(app.into_make_service())
+                        .await
+                    {
+                        error!("HTTPS web server error: {}", e);
+                    }
+                    return;
+                }
+                Err(e) => {
+                    warn!("Failed to create RustlsConfig ({}), falling back to HTTP", e);
+                }
+            }
+        }
+        Err(e) => {
+            warn!("Failed to generate TLS certificate ({}), falling back to HTTP", e);
+        }
+    }
+
+    info!("OpenCam HTTP Web Camera Server starting on http://0.0.0.0:{}", port);
     match tokio::net::TcpListener::bind(addr).await {
         Ok(listener) => {
             if let Err(e) = axum::serve(listener, app).await {
@@ -319,10 +355,10 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
 
         <div class="controls">
             <button class="btn btn-icon" id="flip-btn" aria-label="Changer de caméra">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0-4.418-3.582-8-8-8s-8 3.582-8 8c0 1.954.702 3.744 1.868 5.132L4 17h5v-5l-1.745 1.745A6.002 6.002 0 016 10c0-3.314 2.686-6 6-6s6 2.686 6 6-2.686 6-6 6c-.83 0-1.616-.168-2.333-.474l-1.464 1.464A7.962 7.962 0 0012 20c4.418 0 8-3.582 8-8z"/></svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><circle cx="12" cy="12" r="3"/><path d="m18 22-3-3 3-3"/><path d="m6 2 3 3-3 3"/></svg>
             </button>
             <button class="btn btn-icon" id="torch-btn" aria-label="Torche">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             </button>
         </div>
     </div>
@@ -361,6 +397,14 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
             });
 
             async function initCamera() {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    if (location.protocol !== "https:") {
+                        location.replace("https://" + location.host + location.pathname);
+                        return;
+                    }
+                    alert("Votre navigateur bloque l'accès à la caméra. Vérifiez les permissions de la page et assurez-vous d'utiliser HTTPS.");
+                    return;
+                }
                 if (activeStream) {
                     activeStream.getTracks().forEach(t => t.stop());
                 }
