@@ -49,3 +49,4 @@ fn build_windows_vcam_dll() {
 
 #[cfg(not(target_os = "windows"))]
 fn build_windows_vcam_dll() {}
+
