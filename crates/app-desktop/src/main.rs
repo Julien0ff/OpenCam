@@ -104,20 +104,12 @@ fn main() -> Result<(), anyhow::Error> {
         web_server::start_web_server(web_state, web_port).await;
     });
 
-    // 8. Launch egui Studio UI on the genuine OS main thread
+    // 8. Launch egui Studio UI on the genuine OS main thread (using OpenGL/glow)
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1280.0, 800.0])
             .with_min_inner_size([960.0, 600.0])
             .with_title("OpenCam Studio"),
-        wgpu_options: {
-            let mut setup = eframe::egui_wgpu::WgpuSetupCreateNew::without_display_handle();
-            setup.instance_descriptor.backends = eframe::wgpu::Backends::all();
-            eframe::egui_wgpu::WgpuConfiguration {
-                wgpu_setup: eframe::egui_wgpu::WgpuSetup::CreateNew(setup),
-                ..Default::default()
-            }
-        },
         ..Default::default()
     };
 

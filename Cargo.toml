@@ -28,7 +28,16 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 thiserror = "2.0"
 anyhow = "1.0"
 egui = "0.37"
-eframe = "0.37"
+eframe = { version = "0.37", default-features = false, features = [
+    "accesskit",
+    "clipboard",
+    "default_fonts",
+    "glow",
+    "links",
+    "system_fonts",
+    "wayland",
+    "x11",
+] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 libc = "0.2"
 
