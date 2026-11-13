@@ -456,9 +456,9 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
                         audio: false,
                         video: {
                             facingMode: { ideal: currentFacing },
-                            width: { ideal: 1280 },
-                            height: { ideal: 720 },
-                            frameRate: { ideal: 30, max: 30 }
+                            width: { ideal: 3840 },
+                            height: { ideal: 2160 },
+                            frameRate: { ideal: 60 }
                         }
                     };
                     const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -474,15 +474,13 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
             }
 
             function updateCanvasSize() {
-                const vw = video.videoWidth || 1280;
-                const vh = video.videoHeight || 720;
-                const maxSide = 1280;
-                const scale = Math.min(1, maxSide / Math.max(vw, vh));
-                const cw = Math.round(vw * scale) & ~1;
-                const ch = Math.round(vh * scale) & ~1;
+                const vw = video.videoWidth || 1920;
+                const vh = video.videoHeight || 1080;
+                const cw = vw & ~1;
+                const ch = vh & ~1;
                 if (canvas.width !== cw || canvas.height !== ch) {
-                    canvas.width = cw || 1280;
-                    canvas.height = ch || 720;
+                    canvas.width = cw || 1920;
+                    canvas.height = ch || 1080;
                 }
             }
 
@@ -540,14 +538,14 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
                     clearTimeout(streamTimer);
                     streamTimer = null;
                 }
-                const targetMs = 33; // ~30 fps
+                const targetMs = 16; // jusqu'à 60 fps selon les capacités de la caméra
 
                 function tick() {
                     if (!ws || ws.readyState !== WebSocket.OPEN) return;
                     const t0 = performance.now();
 
-                    if (!video.videoWidth || ws.bufferedAmount > 196608) {
-                        streamTimer = setTimeout(tick, 16);
+                    if (!video.videoWidth || ws.bufferedAmount > 524288) {
+                        streamTimer = setTimeout(tick, 10);
                         return;
                     }
 

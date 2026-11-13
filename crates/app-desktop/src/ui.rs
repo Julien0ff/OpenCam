@@ -240,7 +240,41 @@ impl eframe::App for DesktopStudioApp {
                                     .stroke(Stroke::NONE)
                                     .corner_radius(CornerRadius::same(255));
 
-                                    if ui.add(btn).clicked() {
+                                    if ui.add(btn).clicked() && !is_pgm {
+                                        let prev_id = pgm_id.clone();
+                                        {
+                                            let mut cams = self.state.cameras.lock().unwrap();
+                                            let mut transfer_device: Option<String> = None;
+                                            if let Some(ref pid) = prev_id {
+                                                if let Some(prev_cam) = cams.get_mut(pid) {
+                                                    if prev_cam.vcam_enabled {
+                                                        transfer_device = Some(prev_cam.selected_vcam_device.clone());
+                                                        if let Some(ref mut sink) = prev_cam.vcam_sink {
+                                                            let _ = sink.close();
+                                                        }
+                                                        prev_cam.vcam_sink = None;
+                                                        prev_cam.vcam_enabled = false;
+                                                    }
+                                                }
+                                            }
+                                            if let Some(vcam_dev) = transfer_device {
+                                                if let Some(new_cam) = cams.get_mut(dev_id) {
+                                                    let mut sink = create_default_sink();
+                                                    let config = VcamConfig {
+                                                        device_path: vcam_dev.clone(),
+                                                        width: new_cam.frame_width.max(1),
+                                                        height: new_cam.frame_height.max(1),
+                                                        fps: 30,
+                                                        format: core_protocol::PixelFormat::YUYV,
+                                                    };
+                                                    if sink.open(config).is_ok() {
+                                                        new_cam.selected_vcam_device = vcam_dev;
+                                                        new_cam.vcam_sink = Some(sink);
+                                                        new_cam.vcam_enabled = true;
+                                                    }
+                                                }
+                                            }
+                                        }
                                         *self.state.selected_device_id.lock().unwrap() =
                                             Some(dev_id.clone());
                                         pgm_id = Some(dev_id.clone());
