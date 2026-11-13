@@ -755,6 +755,8 @@ impl eframe::App for DesktopStudioApp {
                             c.frame_height,
                             c.latest_rgba_frame.clone(),
                             c.face_tracking.enabled,
+                            c.head_tracker.latest_metrics.clone(),
+                            c.latest_stats.as_ref().map(|s| s.fps).unwrap_or(0.0),
                             c.vcam_enabled,
                             c.selected_vcam_device.clone(),
                         )
@@ -836,6 +838,8 @@ impl eframe::App for DesktopStudioApp {
                     height,
                     maybe_frame,
                     tracking_enabled,
+                    face_metrics,
+                    fps,
                     vcam_on,
                     vcam_device,
                 )) => {
@@ -938,18 +942,17 @@ impl eframe::App for DesktopStudioApp {
                                 painter.text(
                                     bottom_right_rect.center(),
                                     egui::Align2::CENTER_CENTER,
-                                    format!("{}p · 14 ms", height),
+                                    format!("{}p · {:.0} fps", height, fps),
                                     FontId::proportional(11.5),
                                     Color32::WHITE,
                                 );
 
-                                // Viseur photographique discret (4 angles fins)
-                                if self.show_tracking_hud && tracking_enabled {
-                                    let elapsed = self.start_time.elapsed().as_secs_f32();
-                                    let track_x = 0.5 + (elapsed * 0.7).sin() * 0.10;
-                                    let track_y = 0.44 + (elapsed * 0.5).cos() * 0.04;
-                                    let track_h = 0.28 + (elapsed * 0.4).sin() * 0.04;
-                                    let track_w = track_h * 0.75;
+                                // Viseur photographique réel basé sur la détection de visage
+                                if self.show_tracking_hud && tracking_enabled && face_metrics.detected {
+                                    let track_x = face_metrics.center_x.clamp(0.08, 0.92);
+                                    let track_y = face_metrics.center_y.clamp(0.08, 0.92);
+                                    let track_w = face_metrics.width.clamp(0.10, 0.75);
+                                    let track_h = face_metrics.height.clamp(0.12, 0.85);
 
                                     let box_min_x = screen_rect.min.x
                                         + (track_x - track_w / 2.0) * screen_rect.width();

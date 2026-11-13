@@ -1,6 +1,8 @@
 use core_protocol::Orientation;
 
 /// Fast skin-chrominance face bounding-box estimator on a coarse 64x36 grid (< 0.1ms).
+/// Uses a 16x9 density histogram to lock onto the dominant face cluster rather than
+/// averaging background skin-toned objects.
 /// Returns `(center_x, center_y, width, height)` normalized to `0.0..=1.0`.
 pub fn detect_face_bbox(rgba: &[u8], w: usize, h: usize) -> Option<(f32, f32, f32, f32)> {
     if w < 16 || h < 16 || rgba.len() < w * h * 4 {
@@ -9,20 +11,19 @@ pub fn detect_face_bbox(rgba: &[u8], w: usize, h: usize) -> Option<(f32, f32, f3
 
     const GRID_W: usize = 64;
     const GRID_H: usize = 36;
+    const BINS_X: usize = 16;
+    const BINS_Y: usize = 9;
 
-    let mut sum_x = 0.0f32;
-    let mut sum_y = 0.0f32;
-    let mut count = 0u32;
-    let mut min_x = 1.0f32;
-    let mut max_x = 0.0f32;
-    let mut min_y = 1.0f32;
-    let mut max_y = 0.0f32;
+    let mut bins = [0u16; BINS_X * BINS_Y];
+    let mut bin_sum_x = [0.0f32; BINS_X * BINS_Y];
+    let mut bin_sum_y = [0.0f32; BINS_X * BINS_Y];
 
-    for gy in 2..(GRID_H - 2) {
+    for gy in 1..(GRID_H - 1) {
         let ny = (gy as f32 + 0.5) / GRID_H as f32;
         let sy = (ny * h as f32) as usize;
         let row_off = sy * w * 4;
-        for gx in 4..(GRID_W - 4) {
+        let by = (gy * BINS_Y) / GRID_H;
+        for gx in 2..(GRID_W - 2) {
             let nx = (gx as f32 + 0.5) / GRID_W as f32;
             let sx = (nx * w as f32) as usize;
             let idx = row_off + sx * 4;
@@ -40,33 +41,82 @@ pub fn detect_face_bbox(rgba: &[u8], w: usize, h: usize) -> Option<(f32, f32, f3
             let cr = ((128 * r - 107 * g - 21 * b) >> 8) + 128;
 
             if (77..=127).contains(&cb) && (133..=173).contains(&cr) {
-                sum_x += nx;
-                sum_y += ny;
-                count += 1;
-                if nx < min_x {
-                    min_x = nx;
+                let bx = (gx * BINS_X) / GRID_W;
+                let bi = by * BINS_X + bx;
+                bins[bi] += 1;
+                bin_sum_x[bi] += nx;
+                bin_sum_y[bi] += ny;
+            }
+        }
+    }
+
+    // Find peak 3x3 cluster in the 16x9 grid
+    let mut best_score = 0u32;
+    let mut best_bx = 0usize;
+    let mut best_by = 0usize;
+    for by in 0..BINS_Y {
+        for bx in 0..BINS_X {
+            let mut score = 0u32;
+            for dy in -1i32..=1 {
+                for dx in -1i32..=1 {
+                    let ny = by as i32 + dy;
+                    let nx = bx as i32 + dx;
+                    if ny >= 0 && ny < BINS_Y as i32 && nx >= 0 && nx < BINS_X as i32 {
+                        score += bins[ny as usize * BINS_X + nx as usize] as u32;
+                    }
                 }
-                if nx > max_x {
-                    max_x = nx;
-                }
-                if ny < min_y {
-                    min_y = ny;
-                }
-                if ny > max_y {
-                    max_y = ny;
+            }
+            if score > best_score {
+                best_score = score;
+                best_bx = bx;
+                best_by = by;
+            }
+        }
+    }
+
+    if best_score < 8 {
+        return None;
+    }
+
+    // Compute centroid and bounding box over the 5x5 neighborhood around the peak
+    let mut total_count = 0u32;
+    let mut sum_x = 0.0f32;
+    let mut sum_y = 0.0f32;
+    let mut min_bx = BINS_X;
+    let mut max_bx = 0usize;
+    let mut min_by = BINS_Y;
+    let mut max_by = 0usize;
+
+    for dy in -2i32..=2 {
+        for dx in -2i32..=2 {
+            let ny = best_by as i32 + dy;
+            let nx = best_bx as i32 + dx;
+            if ny >= 0 && ny < BINS_Y as i32 && nx >= 0 && nx < BINS_X as i32 {
+                let ux = nx as usize;
+                let uy = ny as usize;
+                let bi = uy * BINS_X + ux;
+                let c = bins[bi];
+                if c > 0 {
+                    total_count += c as u32;
+                    sum_x += bin_sum_x[bi];
+                    sum_y += bin_sum_y[bi];
+                    min_bx = min_bx.min(ux);
+                    max_bx = max_bx.max(ux);
+                    min_by = min_by.min(uy);
+                    max_by = max_by.max(uy);
                 }
             }
         }
     }
 
-    if count < 10 {
+    if total_count < 8 {
         return None;
     }
 
-    let cx = (sum_x / count as f32).clamp(0.1, 0.9);
-    let cy = (sum_y / count as f32).clamp(0.1, 0.9);
-    let bw = (max_x - min_x).clamp(0.10, 0.70);
-    let bh = (max_y - min_y).clamp(0.12, 0.80);
+    let cx = (sum_x / total_count as f32).clamp(0.08, 0.92);
+    let cy = (sum_y / total_count as f32).clamp(0.08, 0.92);
+    let bw = (((max_bx - min_bx + 1) as f32) / BINS_X as f32).clamp(0.12, 0.65);
+    let bh = (((max_by - min_by + 1) as f32) / BINS_Y as f32).clamp(0.15, 0.75);
     Some((cx, cy, bw, bh))
 }
 

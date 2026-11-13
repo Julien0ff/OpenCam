@@ -198,7 +198,15 @@ async fn handle_socket(mut socket: WebSocket, app_state: AppState) {
                                 } else {
                                     None
                                 };
-                                let (cx, cy, track_zoom) = cam.head_tracker.update(detected, dt);
+                                let (cx, cy, mut track_zoom) = cam.head_tracker.update(detected, dt);
+                                if cam.face_tracking.enabled && detected.is_some() {
+                                    let min_framing_zoom = match cam.face_tracking.framing_mode {
+                                        core_protocol::FramingMode::HeadAndShoulders => 1.35,
+                                        core_protocol::FramingMode::Torso => 1.22,
+                                        core_protocol::FramingMode::GroupWide => 1.12,
+                                    };
+                                    track_zoom = track_zoom.max(min_framing_zoom);
+                                }
                                 let effective_zoom = (cam.zoom * track_zoom).clamp(1.0, 8.0);
 
                                 let (proc_rgba, proc_w, proc_h) = crate::frame_proc::process_frame(
@@ -400,6 +408,7 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
             <button class="btn btn-icon" id="flip-btn" aria-label="Changer de caméra">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><circle cx="12" cy="12" r="3"/><path d="m18 22-3-3 3-3"/><path d="m6 2 3 3-3 3"/></svg>
             </button>
+            <button class="btn pill" id="res-btn" style="height:52px; padding:0 18px; pointer-events:auto; cursor:pointer; font-weight:600; font-size:0.875rem;">1080p</button>
             <button class="btn btn-icon" id="torch-btn" aria-label="Torche">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             </button>
@@ -417,9 +426,19 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
             const statusText = document.getElementById("status-text");
             const fpsBadge = document.getElementById("fps-badge");
             const flipBtn = document.getElementById("flip-btn");
+            const resBtn = document.getElementById("res-btn");
             const torchBtn = document.getElementById("torch-btn");
             const canvas = document.getElementById("offscreen-canvas");
+            let offscreen = null;
+            let offCtx = null;
             const ctx = canvas.getContext("2d", { alpha: false, willReadFrequently: true });
+
+            const resPresets = [
+                { label: "1080p", w: 1920, h: 1080, fps: 60 },
+                { label: "4K", w: 3840, h: 2160, fps: 60 },
+                { label: "720p", w: 1280, h: 720, fps: 60 },
+            ];
+            let resIndex = 0;
 
             let currentFacing = "environment";
             let activeStream = null;
@@ -452,13 +471,14 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
                     activeStream.getTracks().forEach(t => t.stop());
                 }
                 try {
+                    const preset = resPresets[resIndex];
                     const constraints = {
                         audio: false,
                         video: {
                             facingMode: { ideal: currentFacing },
-                            width: { ideal: 3840 },
-                            height: { ideal: 2160 },
-                            frameRate: { ideal: 60 }
+                            width: { ideal: preset.w },
+                            height: { ideal: preset.h },
+                            frameRate: { ideal: preset.fps }
                         }
                     };
                     const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -476,13 +496,23 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
             function updateCanvasSize() {
                 const vw = video.videoWidth || 1920;
                 const vh = video.videoHeight || 1080;
-                const cw = vw & ~1;
-                const ch = vh & ~1;
+                const cw = (vw & ~1) || 1920;
+                const ch = (vh & ~1) || 1080;
                 if (canvas.width !== cw || canvas.height !== ch) {
-                    canvas.width = cw || 1920;
-                    canvas.height = ch || 1080;
+                    canvas.width = cw;
+                    canvas.height = ch;
+                    if (typeof OffscreenCanvas !== "undefined") {
+                        offscreen = new OffscreenCanvas(cw, ch);
+                        offCtx = offscreen.getContext("2d", { alpha: false });
+                    }
                 }
             }
+
+            resBtn.addEventListener("click", () => {
+                resIndex = (resIndex + 1) % resPresets.length;
+                resBtn.textContent = resPresets[resIndex].label;
+                initCamera();
+            });
 
             flipBtn.addEventListener("click", () => {
                 currentFacing = currentFacing === "environment" ? "user" : "environment";
@@ -550,28 +580,34 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
                     }
 
                     updateCanvasSize();
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    canvas.toBlob((blob) => {
+                    const encodePromise = offCtx
+                        ? (offCtx.drawImage(video, 0, 0, offscreen.width, offscreen.height),
+                           offscreen.convertToBlob({ type: "image/jpeg", quality: 0.65 }))
+                        : new Promise((resolve) => {
+                              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                              canvas.toBlob(resolve, "image/jpeg", 0.65);
+                          });
+
+                    encodePromise.then((blob) => {
                         if (blob && ws && ws.readyState === WebSocket.OPEN) {
-                            blob.arrayBuffer().then((buf) => {
+                            return blob.arrayBuffer().then((buf) => {
                                 if (ws && ws.readyState === WebSocket.OPEN) {
                                     ws.send(buf);
                                     frameCount++;
                                 }
-                                const now = performance.now();
-                                if (now - lastFpsTime >= 1000) {
-                                    const currentFps = Math.round((frameCount * 1000) / (now - lastFpsTime));
-                                    fpsBadge.textContent = `${currentFps} fps`;
-                                    frameCount = 0;
-                                    lastFpsTime = now;
-                                }
-                                const elapsed = now - t0;
-                                streamTimer = setTimeout(tick, Math.max(1, targetMs - elapsed));
                             });
-                        } else {
-                            streamTimer = setTimeout(tick, targetMs);
                         }
-                    }, "image/jpeg", 0.65);
+                    }).finally(() => {
+                        const now = performance.now();
+                        if (now - lastFpsTime >= 1000) {
+                            const currentFps = Math.round((frameCount * 1000) / (now - lastFpsTime));
+                            fpsBadge.textContent = `${currentFps} fps`;
+                            frameCount = 0;
+                            lastFpsTime = now;
+                        }
+                        const elapsed = now - t0;
+                        streamTimer = setTimeout(tick, Math.max(1, targetMs - elapsed));
+                    });
                 }
 
                 tick();
