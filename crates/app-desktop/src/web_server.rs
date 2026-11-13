@@ -176,17 +176,50 @@ async fn handle_socket(mut socket: WebSocket, app_state: AppState) {
                         total_bytes_since_check += bytes_len;
                         frames_since_check += 1;
 
-                        // Décode l'image JPEG envoyée par le canvas du smartphone
-                        if let Ok(dyn_img) = image::load_from_memory(&bytes) {
-                            let rgba_img = dyn_img.to_rgba8();
-                            let (w, h) = rgba_img.dimensions();
-                            let raw_rgba = Arc::new(rgba_img.into_raw());
+                        // Décode l'image JPEG hors du thread async Tokio pour éviter toute latence
+                        let decoded = tokio::task::spawn_blocking(move || {
+                            image::load_from_memory(&bytes).ok().map(|dyn_img| {
+                                let rgba_img = dyn_img.to_rgba8();
+                                let (w, h) = rgba_img.dimensions();
+                                (rgba_img.into_raw(), w, h)
+                            })
+                        })
+                        .await
+                        .ok()
+                        .flatten();
 
+                        if let Some((raw_rgba, w, h)) = decoded {
                             let mut cams = app_state.cameras.lock().unwrap();
                             if let Some(cam) = cams.get_mut(&client_id) {
-                                cam.frame_width = w;
-                                cam.frame_height = h;
-                                cam.latest_rgba_frame = Some(raw_rgba.clone());
+                                let dt = cam.last_frame_time.elapsed().as_secs_f32().clamp(0.005, 0.2);
+                                cam.head_tracker.config = cam.face_tracking.clone();
+                                let detected = if cam.face_tracking.enabled {
+                                    crate::frame_proc::detect_face_bbox(&raw_rgba, w as usize, h as usize)
+                                } else {
+                                    None
+                                };
+                                let (cx, cy, track_zoom) = cam.head_tracker.update(detected, dt);
+                                let effective_zoom = (cam.zoom * track_zoom).clamp(1.0, 8.0);
+
+                                let (proc_rgba, proc_w, proc_h) = crate::frame_proc::process_frame(
+                                    &raw_rgba,
+                                    w as usize,
+                                    h as usize,
+                                    cam.orientation,
+                                    cam.mirror_h,
+                                    cam.mirror_v,
+                                    effective_zoom,
+                                    cx,
+                                    cy,
+                                );
+
+                                let pw = proc_w as u32;
+                                let ph = proc_h as u32;
+                                let proc_arc = Arc::new(proc_rgba);
+
+                                cam.frame_width = pw;
+                                cam.frame_height = ph;
+                                cam.latest_rgba_frame = Some(proc_arc.clone());
                                 cam.last_frame_time = Instant::now();
                                 cam.frame_count += 1;
 
@@ -194,17 +227,17 @@ async fn handle_socket(mut socket: WebSocket, app_state: AppState) {
                                 if cam.vcam_enabled {
                                     let dev_path = cam.selected_vcam_device.clone();
                                     if let Some(ref mut sink) = cam.vcam_sink {
-                                        if sink.config().map(|c| (c.width, c.height)) != Some((w, h)) {
+                                        if sink.config().map(|c| (c.width, c.height)) != Some((pw, ph)) {
                                             let _ = sink.open(vcam_sink::VcamConfig {
                                                 device_path: dev_path,
-                                                width: w,
-                                                height: h,
+                                                width: pw,
+                                                height: ph,
                                                 fps: 30,
                                                 format: core_protocol::PixelFormat::YUYV,
                                             });
                                         }
                                         // Conversion RGBA vers YUYV pour vcam
-                                        let yuyv = rgba_to_yuyv(&raw_rgba, w as usize, h as usize);
+                                        let yuyv = rgba_to_yuyv(&proc_arc, proc_w, proc_h);
                                         let _ = sink.write_frame(&yuyv);
                                     }
                                 }
@@ -423,9 +456,9 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
                         audio: false,
                         video: {
                             facingMode: { ideal: currentFacing },
-                            width: { ideal: 1920 },
-                            height: { ideal: 1080 },
-                            frameRate: { ideal: 30 }
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 },
+                            frameRate: { ideal: 30, max: 30 }
                         }
                     };
                     const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -434,11 +467,22 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
                     video.srcObject = stream;
                     await video.play();
 
-                    // Ajuste le canvas à la résolution réelle
-                    canvas.width = video.videoWidth || 1280;
-                    canvas.height = video.videoHeight || 720;
+                    updateCanvasSize();
                 } catch (e) {
                     alert("Impossible d'accéder à la caméra : " + e.message);
+                }
+            }
+
+            function updateCanvasSize() {
+                const vw = video.videoWidth || 1280;
+                const vh = video.videoHeight || 720;
+                const maxSide = 1280;
+                const scale = Math.min(1, maxSide / Math.max(vw, vh));
+                const cw = Math.round(vw * scale) & ~1;
+                const ch = Math.round(vh * scale) & ~1;
+                if (canvas.width !== cw || canvas.height !== ch) {
+                    canvas.width = cw || 1280;
+                    canvas.height = ch || 720;
                 }
             }
 
@@ -456,9 +500,11 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
                 } catch (_) {}
             });
 
+            let streamTimer = null;
             function connectWebSocket() {
                 const proto = location.protocol === "https:" ? "wss:" : "ws:";
                 ws = new WebSocket(`${proto}//${location.host}/ws`);
+                ws.binaryType = "arraybuffer";
 
                 ws.onopen = () => {
                     statusDot.className = "dot";
@@ -468,6 +514,10 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
                 };
 
                 ws.onclose = () => {
+                    if (streamTimer) {
+                        clearTimeout(streamTimer);
+                        streamTimer = null;
+                    }
                     statusDot.className = "dot connecting";
                     statusText.textContent = "Reconnexion...";
                     setTimeout(connectWebSocket, 1500);
@@ -485,41 +535,48 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
                 };
             }
 
-            let isProcessing = false;
             function startStreamingLoop() {
-                const targetFps = 30;
-                const interval = 1000 / targetFps;
+                if (streamTimer) {
+                    clearTimeout(streamTimer);
+                    streamTimer = null;
+                }
+                const targetMs = 33; // ~30 fps
 
-                setInterval(() => {
-                    if (!ws || ws.readyState !== WebSocket.OPEN || isProcessing || !video.videoWidth) return;
+                function tick() {
+                    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+                    const t0 = performance.now();
 
-                    isProcessing = true;
-                    if (canvas.width !== video.videoWidth) {
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
+                    if (!video.videoWidth || ws.bufferedAmount > 196608) {
+                        streamTimer = setTimeout(tick, 16);
+                        return;
                     }
 
+                    updateCanvasSize();
                     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                     canvas.toBlob((blob) => {
-                        if (blob && ws.readyState === WebSocket.OPEN) {
+                        if (blob && ws && ws.readyState === WebSocket.OPEN) {
                             blob.arrayBuffer().then((buf) => {
-                                ws.send(buf);
-                                frameCount++;
-                                isProcessing = false;
+                                if (ws && ws.readyState === WebSocket.OPEN) {
+                                    ws.send(buf);
+                                    frameCount++;
+                                }
+                                const now = performance.now();
+                                if (now - lastFpsTime >= 1000) {
+                                    const currentFps = Math.round((frameCount * 1000) / (now - lastFpsTime));
+                                    fpsBadge.textContent = `${currentFps} fps`;
+                                    frameCount = 0;
+                                    lastFpsTime = now;
+                                }
+                                const elapsed = now - t0;
+                                streamTimer = setTimeout(tick, Math.max(1, targetMs - elapsed));
                             });
                         } else {
-                            isProcessing = false;
+                            streamTimer = setTimeout(tick, targetMs);
                         }
-                    }, "image/jpeg", 0.78);
+                    }, "image/jpeg", 0.65);
+                }
 
-                    const now = performance.now();
-                    if (now - lastFpsTime >= 1000) {
-                        const currentFps = Math.round((frameCount * 1000) / (now - lastFpsTime));
-                        fpsBadge.textContent = `${currentFps} fps`;
-                        frameCount = 0;
-                        lastFpsTime = now;
-                    }
-                }, interval);
+                tick();
             }
         })();
     </script>

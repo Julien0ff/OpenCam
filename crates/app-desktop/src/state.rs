@@ -23,6 +23,7 @@ pub struct ConnectedCamera {
     pub orientation: Orientation,
     pub torch_enabled: bool,
     pub face_tracking: FaceTrackingConfig,
+    pub head_tracker: camera_capture::face_tracking::HeadTracker,
 
     // Live video frame texture
     pub latest_rgba_frame: Option<Arc<Vec<u8>>>,
@@ -62,6 +63,7 @@ impl ConnectedCamera {
             orientation: Orientation::Deg0,
             torch_enabled: false,
             face_tracking: FaceTrackingConfig::default(),
+            head_tracker: camera_capture::face_tracking::HeadTracker::default(),
             latest_rgba_frame: None,
             frame_width: 1280,
             frame_height: 720,
