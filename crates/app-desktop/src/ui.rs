@@ -27,14 +27,15 @@ pub const LIVE_RED: Color32 = Color32::from_rgb(229, 72, 77); // #E5484D
 pub const READY_GREEN: Color32 = Color32::from_rgb(31, 138, 91); // #1F8A5B
 
 pub fn apply_editorial_theme(ctx: &egui::Context) {
-    let mut style = Style::default();
     let mut visuals = Visuals::light();
 
     visuals.panel_fill = PAPER;
     visuals.window_fill = CARD;
-    visuals.override_text_color = Some(INK);
+    visuals.extreme_bg_color = PAPER;
+    visuals.faint_bg_color = PAPER_SUB;
+    visuals.override_text_color = None;
     visuals.window_corner_radius = CornerRadius::same(20);
-    visuals.window_stroke = Stroke::new(1.0, LINE);
+    visuals.window_stroke = Stroke::new(1.0, LINE_HEAVY);
     visuals.window_shadow = Shadow {
         offset: [0, 12],
         blur: 32,
@@ -42,40 +43,49 @@ pub fn apply_editorial_theme(ctx: &egui::Context) {
         color: Color32::from_rgba_unmultiplied(20, 20, 28, 22),
     };
 
-    // Cartes et conteneurs au repos
-    visuals.widgets.noninteractive.bg_fill = CARD;
-    visuals.widgets.noninteractive.bg_stroke = Stroke::new(1.0, LINE);
+    // Rails de sliders, séparateurs et fonds non interactifs (lisibles sur fond blanc CARD)
+    visuals.widgets.noninteractive.bg_fill = PAPER_SUB;
+    visuals.widgets.noninteractive.weak_bg_fill = PAPER_SUB;
+    visuals.widgets.noninteractive.bg_stroke = Stroke::new(1.0, LINE_HEAVY);
     visuals.widgets.noninteractive.corner_radius = CornerRadius::same(16);
     visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0, INK);
 
-    // Boutons secondaires (pilules blanches avec bordure fine)
-    visuals.widgets.inactive.bg_fill = CARD;
-    visuals.widgets.inactive.bg_stroke = Stroke::new(1.0, LINE);
+    // Boutons, curseurs (knobs), checkboxes et champs texte au repos
+    visuals.widgets.inactive.bg_fill = PAPER_SUB;
+    visuals.widgets.inactive.weak_bg_fill = PAPER_SUB;
+    visuals.widgets.inactive.bg_stroke = Stroke::new(1.25, LINE_HEAVY);
     visuals.widgets.inactive.corner_radius = CornerRadius::same(255);
-    visuals.widgets.inactive.fg_stroke = Stroke::new(1.0, INK);
+    visuals.widgets.inactive.fg_stroke = Stroke::new(1.5, INK);
 
-    // Survol (papier doux)
-    visuals.widgets.hovered.bg_fill = PAPER_SUB;
-    visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, LINE_HEAVY);
+    // Survol
+    visuals.widgets.hovered.bg_fill = Color32::from_rgb(220, 218, 210);
+    visuals.widgets.hovered.weak_bg_fill = Color32::from_rgb(220, 218, 210);
+    visuals.widgets.hovered.bg_stroke = Stroke::new(1.5, INK_2);
     visuals.widgets.hovered.corner_radius = CornerRadius::same(255);
-    visuals.widgets.hovered.fg_stroke = Stroke::new(1.0, INK);
+    visuals.widgets.hovered.fg_stroke = Stroke::new(1.5, INK);
 
-    // Bouton sélectionné / actif (pilule noire façon Mindly)
+    // Actif / pressé (pilule noire avec texte blanc)
     visuals.widgets.active.bg_fill = INK;
-    visuals.widgets.active.bg_stroke = Stroke::new(1.0, INK);
+    visuals.widgets.active.weak_bg_fill = INK;
+    visuals.widgets.active.bg_stroke = Stroke::new(1.5, INK);
     visuals.widgets.active.corner_radius = CornerRadius::same(255);
-    visuals.widgets.active.fg_stroke = Stroke::new(1.0, CARD);
+    visuals.widgets.active.fg_stroke = Stroke::new(1.5, CARD);
 
+    // Sélection (toggle_value, selectable_label, etc.)
     visuals.selection.bg_fill = INK;
-    visuals.selection.stroke = Stroke::new(1.0, CARD);
+    visuals.selection.stroke = Stroke::new(1.5, CARD);
 
-    style.spacing.item_spacing = egui::vec2(10.0, 10.0);
-    style.spacing.button_padding = egui::vec2(16.0, 8.0);
-    ctx.style_mut_of(egui::Theme::Light, |s| {
-        s.spacing.item_spacing = egui::vec2(10.0, 10.0);
-        s.spacing.button_padding = egui::vec2(16.0, 8.0);
+    ctx.set_theme(egui::Theme::Light);
+    ctx.set_style_of(egui::Theme::Light, Style {
+        visuals,
+        spacing: egui::style::Spacing {
+            item_spacing: egui::vec2(10.0, 10.0),
+            button_padding: egui::vec2(16.0, 8.0),
+            slider_width: 180.0,
+            ..Default::default()
+        },
+        ..Default::default()
     });
-    ctx.set_visuals(visuals);
 }
 
 pub fn generate_qr_texture(ctx: &egui::Context, text: &str) -> Option<TextureHandle> {

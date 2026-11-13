@@ -328,14 +328,14 @@ const CAMERA_PAGE_HTML: &str = r##"<!DOCTYPE html>
         video { width: 100%; height: 100%; object-fit: cover; }
         
         .hud { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: env(safe-area-inset-top, 20px) 20px env(safe-area-inset-bottom, 24px); }
-        .pill { background: rgba(18, 19, 24, 0.72); border: 1px solid rgba(255, 255, 255, 0.16); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 999px; padding: 8px 16px; font-size: 0.8125rem; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; }
+        .pill { background: rgba(32, 34, 42, 0.88); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.30); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 999px; padding: 8px 16px; font-size: 0.8125rem; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #e5484d; box-shadow: 0 0 10px #e5484d; }
         .dot.connecting { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
         
         .controls { display: flex; justify-content: center; gap: 14px; pointer-events: auto; }
         .btn { background: rgba(255, 255, 255, 0.95); color: #111; border: none; border-radius: 999px; padding: 14px 24px; font-size: 0.9375rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
         .btn:active { transform: scale(0.96); opacity: 0.9; }
-        .btn-icon { width: 52px; height: 52px; padding: 0; justify-content: center; border-radius: 50%; background: rgba(20, 22, 28, 0.82); border: 1px solid rgba(255,255,255,0.2); color: #fff; }
+        .btn-icon { width: 52px; height: 52px; padding: 0; justify-content: center; border-radius: 50%; background: rgba(34, 36, 44, 0.90); border: 1px solid rgba(255,255,255,0.32); color: #fff; }
         
         #start-overlay { position: fixed; inset: 0; background: #0c0d10; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
         #start-overlay h1 { font-size: 1.875rem; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.02em; }
